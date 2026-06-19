@@ -1,0 +1,25 @@
+{
+  "name": "meu-lutador",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Octógono dos Sonhos — UFC/MMA fantasy fighter builder (data foundation)",
+  "scripts": {
+    "ingest": "tsx scripts/ingest.ts",
+    "elo": "tsx scripts/elo.ts",
+    "attributes": "tsx scripts/attributes.ts",
+    "charisma": "tsx scripts/charisma.ts",
+    "pipeline": "tsx scripts/ingest.ts && tsx scripts/elo.ts && tsx scripts/attributes.ts && tsx scripts/charisma.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
