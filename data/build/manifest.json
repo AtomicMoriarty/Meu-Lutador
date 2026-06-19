@@ -1,0 +1,87 @@
+[
+  {
+    "table": "fighters",
+    "conflict": "ufcstats_id",
+    "record_cols": "id uuid, ufcstats_id text, name text, first_name text, last_name text, nickname text, dob date, height_cm numeric, reach_cm numeric, weight_lbs numeric, stance text, source_url text",
+    "files": [
+      "fighters.000.json"
+    ],
+    "count": 4496
+  },
+  {
+    "table": "events",
+    "conflict": "id",
+    "record_cols": "id uuid, ufcstats_id text, name text, ufc_number int, event_date date, location text",
+    "files": [
+      "events.000.json"
+    ],
+    "count": 774
+  },
+  {
+    "table": "fights",
+    "conflict": "id",
+    "record_cols": "id uuid, ufcstats_fight_id text, event_id uuid, bout text, weight_class text, weight_class_raw text, fighter_a_id uuid, fighter_b_id uuid, winner_id uuid, outcome text, method text, round int, time_seconds int, time_format text, referee text, has_round_stats boolean",
+    "files": [
+      "fights.000.json",
+      "fights.001.json"
+    ],
+    "count": 8701
+  },
+  {
+    "table": "fight_round_stats",
+    "conflict": "fight_id,fighter_id,round_num",
+    "record_cols": "fight_id uuid, fighter_id uuid, round_num int, knockdowns int, sig_str_landed int, sig_str_att int, total_str_landed int, total_str_att int, td_landed int, td_att int, sub_att int, reversals int, control_time_seconds int, sig_head_landed int, sig_head_att int, sig_body_landed int, sig_body_att int, sig_leg_landed int, sig_leg_att int, sig_distance_landed int, sig_distance_att int, sig_clinch_landed int, sig_clinch_att int, sig_ground_landed int, sig_ground_att int",
+    "files": [
+      "fight_round_stats.000.json",
+      "fight_round_stats.001.json",
+      "fight_round_stats.002.json",
+      "fight_round_stats.003.json",
+      "fight_round_stats.004.json",
+      "fight_round_stats.005.json",
+      "fight_round_stats.006.json",
+      "fight_round_stats.007.json",
+      "fight_round_stats.008.json"
+    ],
+    "count": 40839
+  },
+  {
+    "table": "fighter_ratings",
+    "conflict": "fighter_id",
+    "record_cols": "fighter_id uuid, elo numeric, peak_elo numeric, n_fights int, wins int, losses int, draws int, no_contests int, overall_0_100 numeric, last_fight_date date",
+    "files": [
+      "fighter_ratings.000.json"
+    ],
+    "count": 2686
+  },
+  {
+    "table": "attribute_scores",
+    "conflict": "fighter_id,weight_class,era_window_id,attribute_name",
+    "record_cols": "fighter_id uuid, weight_class text, era_window_id text, attribute_name text, value_0_100 numeric, raw_value numeric, confidence text",
+    "files": [
+      "attribute_scores.000.json",
+      "attribute_scores.001.json",
+      "attribute_scores.002.json",
+      "attribute_scores.003.json",
+      "attribute_scores.004.json"
+    ],
+    "count": 24679
+  },
+  {
+    "table": "charisma_scores",
+    "conflict": "fighter_id",
+    "record_cols": "fighter_id uuid, value_0_100 numeric, curated_by text, source_notes text",
+    "files": [
+      "charisma_scores.000.json"
+    ],
+    "count": 18
+  },
+  {
+    "table": "ingest_unresolved",
+    "conflict": null,
+    "record_cols": "csv_source text, event text, bout text, fighter_name text, reason text",
+    "files": [
+      "ingest_unresolved.000.json"
+    ],
+    "count": 332
+  }
+]

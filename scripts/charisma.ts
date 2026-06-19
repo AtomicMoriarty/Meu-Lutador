@@ -5,8 +5,16 @@ import { readCsv } from "./lib/csv.js";
 import { fetchAll, upsertBatched } from "./lib/db.js";
 import { clean } from "./parse/normalize.js";
 
-async function main() {
-  const fighters = await fetchAll<{ id: string; name: string }>("fighters", "id,name");
+export type CharismaRow = {
+  fighter_id: string;
+  value_0_100: number;
+  curated_by: string;
+  source_notes: string | null;
+};
+
+export function buildCharismaRows(
+  fighters: { id: string; name: string }[]
+): { rows: CharismaRow[]; misses: string[] } {
   const byName = new Map<string, string[]>();
   for (const f of fighters) {
     const k = (f.name ?? "").toLowerCase();
@@ -14,9 +22,8 @@ async function main() {
     byName.get(k)!.push(f.id);
   }
 
-  const rows: { fighter_id: string; value_0_100: number; curated_by: string; source_notes: string | null }[] = [];
+  const rows: CharismaRow[] = [];
   const misses: string[] = [];
-
   for (const r of readCsv("../curated/charisma.csv")) {
     const name = clean(r["name"]);
     if (!name) continue;
@@ -32,17 +39,24 @@ async function main() {
       source_notes: clean(r["source_notes"]),
     });
   }
+  return { rows, misses };
+}
 
+async function main() {
+  const fighters = await fetchAll<{ id: string; name: string }>("fighters", "id,name");
+  const { rows, misses } = buildCharismaRows(fighters);
   console.log(`Loading ${rows.length} charisma_scores...`);
   await upsertBatched("charisma_scores", rows, "fighter_id");
   if (misses.length) {
-    console.log(`\nUnmatched curated names (${misses.length}):`);
+    console.log(`Unmatched curated names (${misses.length}):`);
     for (const m of misses) console.log("  - " + m);
   }
   console.log("Done.");
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

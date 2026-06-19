@@ -8,7 +8,7 @@
 
 import { fetchAll, upsertBatched } from "./lib/db.js";
 
-type Fight = {
+export type AttrFight = {
   id: string;
   weight_class: string;
   fighter_a_id: string | null;
@@ -20,13 +20,12 @@ type Fight = {
   has_round_stats: boolean;
 };
 
-type RoundStat = {
+export type AttrRoundStat = {
   fight_id: string;
   fighter_id: string;
   round_num: number;
   knockdowns: number | null;
   sig_str_landed: number | null;
-  sig_str_att: number | null;
   td_landed: number | null;
   td_att: number | null;
   sub_att: number | null;
@@ -34,39 +33,29 @@ type RoundStat = {
   sig_leg_landed: number | null;
 };
 
-type Rating = { fighter_id: string; elo: number };
+export type AttributeRow = {
+  fighter_id: string;
+  weight_class: string;
+  era_window_id: string;
+  attribute_name: string;
+  value_0_100: number;
+  raw_value: number;
+  confidence: string;
+};
 
 const num = (v: number | null | undefined) => (v == null ? 0 : v);
-const fightMinutes = (f: Fight) =>
+const fightMinutes = (f: AttrFight) =>
   ((f.round ?? 1) - 1) * 5 + num(f.time_seconds) / 60;
 
-// Per-fighter accumulators.
 type Acc = {
   weightCounts: Map<string, number>;
-  totalFights: number;
-  wins: number;
-  losses: number;
-  koWins: number;
-  koLosses: number;
-  subWins: number;
-  winMethods: Set<string>;
-  winsVsHigherElo: number;
-  decisiveWins: number;
-  // granular:
-  gMinutes: number;
-  sigLanded: number;
-  legLanded: number;
-  tdLanded: number;
-  tdAtt: number;
-  subAtt: number;
-  controlSec: number;
-  earlySig: number;
-  earlyRounds: number;
-  lateSig: number;
-  lateRounds: number;
-  oppTdLanded: number;
-  oppTdAtt: number;
-  timesKnockedDown: number;
+  totalFights: number; wins: number; losses: number;
+  koWins: number; koLosses: number; subWins: number;
+  winMethods: Set<string>; winsVsHigherElo: number; decisiveWins: number;
+  gMinutes: number; sigLanded: number; legLanded: number;
+  tdLanded: number; tdAtt: number; subAtt: number; controlSec: number;
+  earlySig: number; earlyRounds: number; lateSig: number; lateRounds: number;
+  oppTdLanded: number; oppTdAtt: number; timesKnockedDown: number;
 };
 
 function newAcc(): Acc {
@@ -82,30 +71,16 @@ function newAcc(): Acc {
 
 const isKo = (m: string | null) => !!m && /ko\/tko/i.test(m);
 const isSub = (m: string | null) => !!m && /submission/i.test(m);
+const methodCategory = (m: string | null) => (isKo(m) ? "ko" : isSub(m) ? "sub" : "dec");
 
-function methodCategory(m: string | null): string {
-  if (isKo(m)) return "ko";
-  if (isSub(m)) return "sub";
-  return "dec";
-}
-
-async function main() {
-  console.log("Loading fights, round stats, ratings...");
-  const fights = await fetchAll<Fight>(
-    "fights",
-    "id,weight_class,fighter_a_id,fighter_b_id,winner_id,method,round,time_seconds,has_round_stats"
-  );
-  const stats = await fetchAll<RoundStat>(
-    "fight_round_stats",
-    "fight_id,fighter_id,round_num,knockdowns,sig_str_landed,sig_str_att,td_landed,td_att,sub_att,control_time_seconds,sig_leg_landed"
-  );
-  const ratings = await fetchAll<Rating>("fighter_ratings", "fighter_id,elo");
-  const eloOf = new Map(ratings.map((r) => [r.fighter_id, r.elo]));
-  console.log(`  ${fights.length} fights, ${stats.length} round rows`);
-
+/** Pure attribute computation. eloOf maps fighter_id -> final Elo. */
+export function computeAttributeRows(
+  fights: AttrFight[],
+  stats: AttrRoundStat[],
+  eloOf: Map<string, number>
+): AttributeRow[] {
   const fightById = new Map(fights.map((f) => [f.id, f]));
-  // round stats grouped by fight -> fighter -> rows
-  const byFight = new Map<string, Map<string, RoundStat[]>>();
+  const byFight = new Map<string, Map<string, AttrRoundStat[]>>();
   for (const s of stats) {
     let m = byFight.get(s.fight_id);
     if (!m) { m = new Map(); byFight.set(s.fight_id, m); }
@@ -121,7 +96,7 @@ async function main() {
     return a;
   };
 
-  // ---- results-based pass (all eras) ----
+  // results-based pass (all eras)
   for (const f of fights) {
     const ids = [f.fighter_a_id, f.fighter_b_id].filter(Boolean) as string[];
     for (const id of ids) {
@@ -145,7 +120,7 @@ async function main() {
     }
   }
 
-  // ---- granular pass ----
+  // granular pass
   for (const [fightId, perFighter] of byFight) {
     const f = fightById.get(fightId);
     if (!f) continue;
@@ -174,23 +149,21 @@ async function main() {
     }
   }
 
-  // ---- primary weight class per fighter ----
+  // primary weight class
   const primaryWC = new Map<string, string>();
   for (const [id, a] of acc) {
-    let best = "unknown", bestN = -1;
+    let best = "unknown", bestScore = -1;
     for (const [wc, n] of a.weightCounts) {
-      // prefer real divisions over bucket labels when counts tie
       const isReal = !["unknown", "catchweight", "open_weight"].includes(wc);
       const score = n * 10 + (isReal ? 1 : 0);
-      if (score > bestN) { bestN = score; best = wc; }
+      if (score > bestScore) { bestScore = score; best = wc; }
     }
     primaryWC.set(id, best);
   }
 
-  const MIN_GMIN = 15; // need ~1 full fight of granular data
+  const MIN_GMIN = 15;
   const hasGranular = (id: string) => num(acc.get(id)?.gMinutes) >= MIN_GMIN;
 
-  // ---- raw metrics (undefined => not emitted for that fighter) ----
   type Metric = { name: string; granular: boolean; values: Map<string, number> };
   const metrics: Metric[] = [];
   const M = (name: string, granular: boolean) => {
@@ -209,28 +182,25 @@ async function main() {
   const mTdDef = M("defesa_queda", true);
   const mGround = M("controle_chao", true);
   const mSub = M("finalizacao", true);
-  const mIq = M("qi_luta", false); // proxy, always 'medio'
+  const mIq = M("qi_luta", false);
 
   for (const [id, a] of acc) {
     if (a.totalFights >= 1) {
       mPower.values.set(id, a.koWins / a.totalFights);
       mChin.values.set(id, 1 - a.koLosses / Math.max(a.losses, 1));
-      // fight IQ proxy: wins vs higher-elo opp + method diversity
       const iq = 0.7 * (a.decisiveWins ? a.winsVsHigherElo / a.decisiveWins : 0) +
         0.3 * (a.winMethods.size / 3);
       mIq.values.set(id, iq);
     }
     if (hasGranular(id)) {
-      mVolume.values.set(id, a.sigLanded / a.gMinutes); // SLpM
+      mVolume.values.set(id, a.sigLanded / a.gMinutes);
       if (a.sigLanded > 0) mKicks.values.set(id, a.legLanded / a.sigLanded);
       if (a.earlyRounds > 0 && a.lateRounds > 0) {
         const early = a.earlySig / a.earlyRounds;
         const late = a.lateSig / a.lateRounds;
         if (early > 0) mCardio.values.set(id, late / early);
       }
-      if (a.timesKnockedDown > 0) {
-        mRecovery.values.set(id, 1 - a.koLosses / a.timesKnockedDown);
-      }
+      if (a.timesKnockedDown > 0) mRecovery.values.set(id, 1 - a.koLosses / a.timesKnockedDown);
       mTdOff.values.set(id, (a.tdLanded / a.gMinutes) * 15);
       if (a.oppTdAtt > 0) mTdDef.values.set(id, 1 - a.oppTdLanded / a.oppTdAtt);
       mGround.values.set(id, (a.controlSec / a.gMinutes) * 15);
@@ -238,9 +208,7 @@ async function main() {
     }
   }
 
-  // ---- z-score within weight class -> 0-100 ----
-  function toScores(m: Metric): { fighter_id: string; value_0_100: number; raw_value: number }[] {
-    // group raw values by weight class
+  function toScores(m: Metric) {
     const byWc = new Map<string, { id: string; v: number }[]>();
     for (const [id, v] of m.values) {
       const wc = primaryWC.get(id) ?? "unknown";
@@ -260,11 +228,7 @@ async function main() {
     return out;
   }
 
-  const rows: {
-    fighter_id: string; weight_class: string; era_window_id: string;
-    attribute_name: string; value_0_100: number; raw_value: number; confidence: string;
-  }[] = [];
-
+  const rows: AttributeRow[] = [];
   for (const m of metrics) {
     for (const s of toScores(m)) {
       let confidence: string;
@@ -282,21 +246,34 @@ async function main() {
       });
     }
   }
+  return rows;
+}
 
+async function main() {
+  console.log("Loading fights, round stats, ratings...");
+  const fights = await fetchAll<AttrFight>(
+    "fights",
+    "id,weight_class,fighter_a_id,fighter_b_id,winner_id,method,round,time_seconds,has_round_stats"
+  );
+  const stats = await fetchAll<AttrRoundStat>(
+    "fight_round_stats",
+    "fight_id,fighter_id,round_num,knockdowns,sig_str_landed,td_landed,td_att,sub_att,control_time_seconds,sig_leg_landed"
+  );
+  const ratings = await fetchAll<{ fighter_id: string; elo: number }>("fighter_ratings", "fighter_id,elo");
+  const eloOf = new Map(ratings.map((r) => [r.fighter_id, r.elo]));
+
+  const rows = computeAttributeRows(fights, stats, eloOf);
   console.log(`Writing ${rows.length} attribute_scores...`);
   await upsertBatched("attribute_scores", rows, "fighter_id,weight_class,era_window_id,attribute_name");
 
-  const byConf = rows.reduce((acc2, r) => {
-    acc2[r.confidence] = (acc2[r.confidence] ?? 0) + 1;
-    return acc2;
-  }, {} as Record<string, number>);
-  console.log("\n=== Attributes summary ===");
-  console.log(`fighters with any attribute: ${new Set(rows.map((r) => r.fighter_id)).size}`);
-  console.log(`rows by confidence:`, byConf);
+  const byConf = rows.reduce((a, r) => ((a[r.confidence] = (a[r.confidence] ?? 0) + 1), a), {} as Record<string, number>);
+  console.log("rows by confidence:", byConf);
   console.log("Done.");
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

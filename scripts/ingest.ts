@@ -36,7 +36,7 @@ const keyOf = (event: string, bout: string) =>
 // 1. Fighters
 // ---------------------------------------------------------------------------
 
-type FighterRow = {
+export type FighterRow = {
   id: string;
   ufcstats_id: string;
   name: string;
@@ -158,7 +158,7 @@ function resolveFighterId(
 // 2. Events
 // ---------------------------------------------------------------------------
 
-type EventRow = {
+export type EventRow = {
   id: string;
   ufcstats_id: string | null;
   name: string;
@@ -193,7 +193,7 @@ function buildEvents(): EventRow[] {
 // 3 & 4. Fights + round stats
 // ---------------------------------------------------------------------------
 
-type FightRow = {
+export type FightRow = {
   id: string;
   ufcstats_fight_id: string | null;
   event_id: string | null;
@@ -267,7 +267,15 @@ function buildFights(statKeys: Set<string>) {
   return { fights, fightByKey };
 }
 
-type RoundStatRow = {
+export type UnresolvedRow = {
+  csv_source: string;
+  event: string | null;
+  bout: string | null;
+  fighter_name: string | null;
+  reason: string;
+};
+
+export type RoundStatRow = {
   fight_id: string;
   fighter_id: string;
   round_num: number;
@@ -359,33 +367,36 @@ function buildRoundStats(fightByKey: Map<string, FightRow>): RoundStatRow[] {
 
 // ---------------------------------------------------------------------------
 
-async function main() {
-  console.log("Building fighters...");
+export type Dataset = {
+  fighters: FighterRow[];
+  events: EventRow[];
+  fights: FightRow[];
+  roundStats: RoundStatRow[];
+  unresolved: UnresolvedRow[];
+};
+
+/** Pure CSV -> normalized rows. No DB access (so it runs anywhere). */
+export function buildDataset(): Dataset {
   buildFighters();
-  console.log(`  ${fighters.size} fighters`);
-
-  console.log("Building events...");
   const events = buildEvents();
-  console.log(`  ${events.length} events`);
-
-  // Pre-scan stats for which (event,bout) have round-level data.
-  console.log("Scanning fight_stats for round coverage...");
   const statKeys = new Set<string>();
   for (const r of readCsv("ufc_fight_stats.csv")) {
     statKeys.add(keyOf(clean(r["EVENT"]) ?? "", clean(r["BOUT"]) ?? ""));
   }
-
-  console.log("Building fights...");
   const { fights, fightByKey } = buildFights(statKeys);
-  console.log(`  ${fights.length} fights`);
-
-  console.log("Building round stats...");
   const roundStats = buildRoundStats(fightByKey);
-  console.log(`  ${roundStats.length} round-stat rows`);
+  return { fighters: [...fighters.values()], events, fights, roundStats, unresolved };
+}
+
+async function main() {
+  const { fighters: fighterRows, events, fights, roundStats } = buildDataset();
+  console.log(
+    `built fighters=${fighterRows.length} events=${events.length} fights=${fights.length} roundStats=${roundStats.length}`
+  );
 
   // Load order respects FKs: fighters & events, then fights, then stats.
   console.log("Loading fighters...");
-  await upsertBatched("fighters", [...fighters.values()], "ufcstats_id");
+  await upsertBatched("fighters", fighterRows, "ufcstats_id");
   console.log("Loading events...");
   await upsertBatched("events", events, "id");
   console.log("Loading fights...");
@@ -407,7 +418,7 @@ async function main() {
   const unmatched = unresolved.filter((u) => u.reason === "unmatched").length;
   const collisions = unresolved.filter((u) => u.reason === "collision").length;
   console.log("\n=== Ingestion summary ===");
-  console.log(`fighters:          ${fighters.size}`);
+  console.log(`fighters:          ${fighterRows.length}`);
   console.log(`events:            ${events.length}`);
   console.log(`fights:            ${fights.length}`);
   console.log(`fight_round_stats: ${roundStats.length}`);
@@ -415,7 +426,9 @@ async function main() {
   console.log("Done.");
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

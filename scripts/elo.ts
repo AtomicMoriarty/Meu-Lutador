@@ -2,7 +2,7 @@
 // covers fighters from UFC 1 onward, including the pre-stats era. This is a
 // fallback/baseline, NOT the final quality metric (see FightMatrix critique).
 
-import { db, fetchAll, upsertBatched } from "./lib/db.js";
+import { fetchAll, upsertBatched } from "./lib/db.js";
 
 const START_ELO = 1500;
 const K_NEW = 275; // first 3 fights of a fighter's career
@@ -10,7 +10,7 @@ const K_NEW_LIMIT = 3;
 const K_EST = 155; // afterwards
 const SPLIT_WIN = 0.67; // split-decision score for the winner
 
-type Fight = {
+export type EloFight = {
   id: string;
   event_id: string | null;
   fighter_a_id: string | null;
@@ -20,7 +20,20 @@ type Fight = {
   method: string | null;
 };
 
-type Event = { id: string; event_date: string | null };
+export type EloEvent = { id: string; event_date: string | null };
+
+export type RatingRow = {
+  fighter_id: string;
+  elo: number;
+  peak_elo: number;
+  n_fights: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  no_contests: number;
+  overall_0_100: number;
+  last_fight_date: string | null;
+};
 
 type Rating = {
   elo: number;
@@ -38,18 +51,11 @@ const kOf = (n: number) => (n < K_NEW_LIMIT ? K_NEW : K_EST);
 const toOverall = (elo: number) =>
   Math.max(1, Math.min(99, Math.round(50 + (elo - START_ELO) / 8)));
 
-async function main() {
-  console.log("Loading events + fights...");
-  const events = await fetchAll<Event>("events", "id,event_date");
+/** Pure Elo computation over the given fights/events. */
+export function computeRatings(fights: EloFight[], events: EloEvent[]): RatingRow[] {
   const dateById = new Map(events.map((e) => [e.id, e.event_date]));
-  const fights = await fetchAll<Fight>(
-    "fights",
-    "id,event_id,fighter_a_id,fighter_b_id,winner_id,outcome,method"
-  );
-  console.log(`  ${events.length} events, ${fights.length} fights`);
 
-  // Chronological order; undated fights sink to the end deterministically.
-  fights.sort((x, y) => {
+  const ordered = [...fights].sort((x, y) => {
     const dx = (x.event_id && dateById.get(x.event_id)) || "9999-12-31";
     const dy = (y.event_id && dateById.get(y.event_id)) || "9999-12-31";
     if (dx !== dy) return dx < dy ? -1 : 1;
@@ -66,14 +72,13 @@ async function main() {
     return v;
   };
 
-  for (const f of fights) {
+  for (const f of ordered) {
     if (!f.fighter_a_id || !f.fighter_b_id) continue;
     const a = get(f.fighter_a_id);
     const b = get(f.fighter_b_id);
     const date = (f.event_id && dateById.get(f.event_id)) || null;
 
     const outcome = f.outcome;
-    // No-contest / unknown: count the bout but do not move ratings.
     if (outcome !== "W/L" && outcome !== "L/W" && outcome !== "D/D") {
       a.n++; b.n++; a.nc++; b.nc++;
       a.lastDate = date; b.lastDate = date;
@@ -93,10 +98,8 @@ async function main() {
     }
 
     const eA = expected(a.elo, b.elo);
-    const kA = kOf(a.n);
-    const kB = kOf(b.n);
-    a.elo += kA * (sA - eA);
-    b.elo += kB * (1 - sA - (1 - eA));
+    a.elo += kOf(a.n) * (sA - eA);
+    b.elo += kOf(b.n) * (1 - sA - (1 - eA));
 
     a.n++; b.n++;
     a.peak = Math.max(a.peak, a.elo);
@@ -104,7 +107,7 @@ async function main() {
     a.lastDate = date; b.lastDate = date;
   }
 
-  const rows = [...r.entries()].map(([fighter_id, v]) => ({
+  return [...r.entries()].map(([fighter_id, v]) => ({
     fighter_id,
     elo: Math.round(v.elo * 10) / 10,
     peak_elo: Math.round(v.peak * 10) / 10,
@@ -116,22 +119,34 @@ async function main() {
     overall_0_100: toOverall(v.elo),
     last_fight_date: v.lastDate,
   }));
+}
+
+async function main() {
+  console.log("Loading events + fights...");
+  const events = await fetchAll<EloEvent>("events", "id,event_date");
+  const fights = await fetchAll<EloFight>(
+    "fights",
+    "id,event_id,fighter_a_id,fighter_b_id,winner_id,outcome,method"
+  );
+  const rows = computeRatings(fights, events);
 
   console.log(`Writing ${rows.length} fighter_ratings...`);
   await upsertBatched("fighter_ratings", rows, "fighter_id");
 
-  // Sanity peek: the current top of the all-time Elo list.
   const top = [...rows].sort((x, y) => y.elo - x.elo).slice(0, 10);
   const names = await fetchAll<{ id: string; name: string }>("fighters", "id,name");
   const nameById = new Map(names.map((n) => [n.id, n.name]));
   console.log("\nTop 10 by Elo:");
   for (const t of top) {
-    console.log(`  ${(nameById.get(t.fighter_id) ?? "?").padEnd(24)} elo=${t.elo}  ovr=${t.overall_0_100}  (${t.wins}-${t.losses}-${t.draws})`);
+    console.log(`  ${(nameById.get(t.fighter_id) ?? "?").padEnd(24)} elo=${t.elo}  ovr=${t.overall_0_100}`);
   }
   console.log("Done.");
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// Run as a script only when invoked directly.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
