@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0a0a0c;
+  --color-ink-2: #111115;
+  --color-ink-3: #18181d;
+  --color-line: #26262e;
+  --color-blood: #e11d2a;
+  --color-blood-2: #ff3344;
+  --color-gold: #f5b53f;
+  --color-mist: #9aa0ad;
+
+  --font-display: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: var(--color-ink);
+  color: #f4f4f6;
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* subtle textured backdrop */
+body {
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, rgba(225, 29, 42, 0.16), transparent 60%),
+    radial-gradient(900px 500px at 100% 110%, rgba(245, 181, 63, 0.08), transparent 60%);
+  background-attachment: fixed;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 999px; }
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(225,29,42,0.5); }
+  70% { box-shadow: 0 0 0 14px rgba(225,29,42,0); }
+  100% { box-shadow: 0 0 0 0 rgba(225,29,42,0); }
+}
+.pulse-ring { animation: pulse-ring 1.8s infinite; }
+
+.text-glow { text-shadow: 0 0 24px rgba(225,29,42,0.45); }
+.gold-glow { text-shadow: 0 0 20px rgba(245,181,63,0.35); }
+
+.card {
+  background: linear-gradient(180deg, var(--color-ink-2), var(--color-ink));
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+}
+
+/* ---- BackgroundGradientAnimation keyframes (Tailwind v4 has no JS config) ---- */
+@keyframes moveHorizontal {
+  0% { transform: translateX(-50%) translateY(-10%); }
+  50% { transform: translateX(50%) translateY(10%); }
+  100% { transform: translateX(-50%) translateY(-10%); }
+}
+@keyframes moveInCircle {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes moveVertical {
+  0% { transform: translateY(-50%); }
+  50% { transform: translateY(50%); }
+  100% { transform: translateY(-50%); }
+}
+.animate-first { animation: moveVertical 30s ease infinite; }
+.animate-second { animation: moveInCircle 20s reverse infinite; }
+.animate-third { animation: moveInCircle 40s linear infinite; }
+.animate-fourth { animation: moveHorizontal 40s ease infinite; }
+.animate-fifth { animation: moveInCircle 20s ease infinite; }
+
+/* ---- fight-finish impact ---- */
+@keyframes impact-flash {
+  0% { opacity: 0; }
+  12% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+.impact-flash { animation: impact-flash 0.5s ease-out forwards; }
+
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(6px, -3px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(4px, 2px); }
+}
+.shake { animation: shake 0.45s ease-in-out; }
+
+@keyframes punch-in {
+  0% { transform: scale(0.4); opacity: 0; filter: blur(6px); }
+  60% { transform: scale(1.08); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); }
+}
+.punch-in { animation: punch-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-first, .animate-second, .animate-third, .animate-fourth, .animate-fifth,
+  .impact-flash, .shake, .punch-in { animation: none !important; }
+}
