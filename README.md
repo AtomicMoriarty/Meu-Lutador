@@ -40,9 +40,32 @@ npm run charisma       # curated mic-skills -> charisma_scores
 - `confidence` on `attribute_scores`: `alto` (granular round stats), `medio`
   (results-only / weak proxy), `manual` (hand-curated).
 
-## Network note
+## Loading
 
-In the Claude-Code web environment, direct Postgres ports and the Supabase host
-may be blocked by the network egress policy. If `npm run ingest` fails with
-"Host not in allowlist", add the Supabase host to the environment's egress
-settings, or run the load server-side.
+Two paths, depending on whether this machine can reach Supabase:
+
+**A. Direct (egress to `*.supabase.co:443` allowed).** Fill `.env` with a
+write-capable key and run `npm run pipeline`.
+
+**B. Server-side (Supabase host blocked — the default in the Claude-Code web
+environment).** The container can't reach Supabase, so:
+
+```
+npm run build:json     # compute everything locally -> data/build/*.json
+git push               # publish the JSON artifacts
+```
+
+Then load them from inside Postgres (the DB *can* reach GitHub) via the `http`
+extension — see `db/seed/load_from_github.sql` (manifest-driven, idempotent).
+
+## Current state
+
+The MVP dataset is loaded in Supabase `meu_lutador`: 4,496 fighters, 774 events,
+8,701 fights, 40,839 round-stat rows, 2,686 Elo ratings, 24,679 attribute scores
+(21,019 `alto` / 3,660 `medio`), 18 curated charisma rows. Granular round stats
+exist back to **1994**, so `alto`-confidence attributes are broadly available.
+
+### Security note
+Tables in `meu_lutador` are readable via the project's anon key (RLS disabled).
+Before any public deployment, enable RLS with a public-read policy — see the SQL
+in the project handoff notes.
