@@ -11,6 +11,8 @@
     "charisma": "tsx scripts/charisma.ts",
     "pipeline": "tsx scripts/ingest.ts && tsx scripts/elo.ts && tsx scripts/attributes.ts && tsx scripts/charisma.ts",
     "build:json": "tsx scripts/build-json.ts",
+    "sim:demo": "tsx scripts/sim-demo.ts",
+    "sync:engine": "cp src/engine.ts supabase/functions/ml-api/engine.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

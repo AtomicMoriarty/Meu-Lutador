@@ -65,6 +65,25 @@ The MVP dataset is loaded in Supabase `meu_lutador`: 4,496 fighters, 774 events,
 (21,019 `alto` / 3,660 `medio`), 18 curated charisma rows. Granular round stats
 exist back to **1994**, so `alto`-confidence attributes are broadly available.
 
+## API (Phase 3)
+
+Pure simulation engine in `src/engine.ts` (deterministic, no I/O — tested via
+`npm run sim:demo`). The game API is a single routed Supabase Edge Function
+`ml-api` (`supabase/functions/ml-api/`, engine copied in via `npm run sync:engine`):
+
+| Route | Method | Purpose |
+|---|---|---|
+| `/ml-api/draw?weight_class=` | GET | random division + era anchor + the 11 attribute slots |
+| `/ml-api/slot-options?weight_class&anchor_event_id&attribute` | GET | pickable fighters + their value for that attribute |
+| `/ml-api/simulate` | POST | `{fighterA, fighterB, rounds?, seed?}` → event log (+ optional narrative) |
+
+Base URL: `https://nozthsissdwkfwtogmdu.supabase.co/functions/v1`. All routes
+require `Authorization: Bearer <anon key>`. A built fighter is
+`{ name, picks: { <attribute_name>: <source_fighter_id> } }`.
+
+Narrative (PT-BR, plan §8) is generated only if the `ANTHROPIC_API_KEY` secret
+is set on the function (optional); otherwise `simulate` returns `narrative: null`.
+
 ### Security note
 Tables in `meu_lutador` are readable via the project's anon key (RLS disabled).
 Before any public deployment, enable RLS with a public-read policy — see the SQL
