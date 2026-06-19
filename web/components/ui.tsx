@@ -1,24 +1,8 @@
 "use client";
 import { motion } from "framer-motion";
-import type { Confidence } from "@/lib/types";
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(" ");
-}
-
-const CONF: Record<Confidence, { label: string; cls: string }> = {
-  alto: { label: "dado real", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
-  medio: { label: "estimado", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-  manual: { label: "curado", cls: "bg-sky-500/15 text-sky-300 border-sky-500/30" },
-};
-
-export function ConfidenceBadge({ c }: { c: Confidence }) {
-  const meta = CONF[c] ?? CONF.medio;
-  return (
-    <span className={cx("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", meta.cls)}>
-      {meta.label}
-    </span>
-  );
 }
 
 export function StatBar({ value, tone = "blood" }: { value: number; tone?: "blood" | "gold" }) {

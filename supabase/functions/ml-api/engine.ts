@@ -1,32 +1,17 @@
-// Pure MMA fight-simulation engine (plan §7). No I/O, no deps, deterministic
-// given a seed — so it runs identically in Node (tests) and Deno (edge API).
-//
-// Input: two fighters, each with the combat attributes (0-100). Every attribute
-// also carries the *source* base-fighter name it was inherited from, so the
-// event log can later say "the takedown came from X's wrestling".
-//
-// Output: a structured event log + the result (no prose; narrative is generated
-// separately from this log).
+// Pure MMA fight-simulation engine (career-mode). No I/O, no deps, deterministic
+// given a seed — runs identically in Node (tests) and the browser (the app runs
+// it client-side). Produces a rich PT-BR event log (reads like a story WITHOUT
+// any AI), real 10-point-must judging (3 judges), fouls, and dramatic suspense.
 
 export type AttrKey =
-  | "power"            // poder_de_mao
-  | "volume"           // volume_velocidade
-  | "kicks"            // chute_perna
-  | "cardio"           // cardio
-  | "chin"             // queixo
-  | "recovery"         // recuperacao
-  | "takedownOffense"  // wrestling_quedas
-  | "takedownDefense"  // defesa_queda
-  | "groundControl"    // controle_chao
-  | "submission"       // finalizacao
-  | "fightIq";         // qi_luta
+  | "power" | "volume" | "kicks" | "cardio" | "chin" | "recovery"
+  | "takedownOffense" | "takedownDefense" | "groundControl" | "submission" | "fightIq";
 
 export const ATTR_KEYS: AttrKey[] = [
   "power", "volume", "kicks", "cardio", "chin", "recovery",
   "takedownOffense", "takedownDefense", "groundControl", "submission", "fightIq",
 ];
 
-// Maps the DB attribute_name -> engine key.
 export const ATTR_NAME_TO_KEY: Record<string, AttrKey> = {
   poder_de_mao: "power",
   volume_velocidade: "volume",
@@ -42,45 +27,45 @@ export const ATTR_NAME_TO_KEY: Record<string, AttrKey> = {
 };
 
 export type SourcedAttr = { value: number; source?: string };
-export type FighterInput = {
-  name: string;
-  attrs: Record<AttrKey, SourcedAttr>;
-};
+export type FighterInput = { name: string; attrs: Record<AttrKey, SourcedAttr> };
 
 export type SimEventType =
-  | "round_start" | "strike" | "knockdown" | "takedown" | "takedown_stuffed"
-  | "control" | "submission_attempt" | "sweep" | "ko" | "tko" | "submission"
-  | "round_end" | "decision";
+  | "round_start" | "round_end" | "strike" | "big_strike" | "kick" | "miss"
+  | "knockdown" | "hurt" | "swarm" | "recover" | "saved_by_bell"
+  | "takedown" | "takedown_stuffed" | "control" | "ground_strikes" | "sweep" | "scramble"
+  | "submission_attempt" | "submission" | "ko" | "tko" | "foul" | "decision";
 
 export type SimEvent = {
   round: number;
-  clock: string;        // mm:ss elapsed in the round
+  clock: string;
   type: SimEventType;
-  actor?: string;       // fighter name acting
-  target?: string;      // fighter name on receiving end
-  attribute?: AttrKey;  // attribute that drove this event
-  source?: string;      // base fighter the attribute was inherited from
+  actor?: string;
+  target?: string;
+  attribute?: AttrKey;
+  source?: string;
   detail?: string;
 };
 
 export type Method = "KO/TKO" | "Submission" | "Decision" | "Draw";
+export type JudgeCard = { a: number; b: number };
 
 export type SimResult = {
-  winner: string | null;       // null => draw
+  winner: string | null;
   loser: string | null;
   method: Method;
+  decision: string;          // PT label, e.g. "Decisão Unânime"
   round: number;
-  clock: string;               // mm:ss when it ended
+  clock: string;
   rounds: number;
-  scorecards: { a: number; b: number };
+  judges: JudgeCard[];       // 3 judges
+  roundScores: { round: number; a: number; b: number }[];
   events: SimEvent[];
   seed: number;
 };
 
 export type SimOptions = { rounds?: 3 | 5; seed?: number };
 
-// ---------------------------------------------------------------------------
-
+// --------------------------------------------------------------------------- RNG
 function mulberry32(seed: number) {
   let t = seed >>> 0;
   return () => {
@@ -90,256 +75,251 @@ function mulberry32(seed: number) {
     return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
   };
 }
-
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
-const fmtClock = (elapsed: number) => {
-  const s = Math.max(0, Math.min(300, Math.round(elapsed)));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+const fmtClock = (s: number) => {
+  const v = Math.max(0, Math.min(300, Math.round(s)));
+  return `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`;
 };
-
 const ROUND_SECONDS = 300;
+
+// --------------------------------------------------------------------------- phrases (PT-BR)
+const PUNCH = ["um jab firme", "um direto de direita", "um cruzado pesado", "um gancho curto", "um uppercut", "um overhand", "uma sequência de socos"];
+const KICK_LOW = ["um chute baixo que ecoa pela arena", "um low kick castigando a coxa"];
+const KICK_BODY = ["um chute no corpo", "um chute nas costelas que tira o ar"];
+const KICK_HEAD = ["um chute alto", "uma canela no queixo"];
+const MISS = ["mas a defesa estava pronta", "mas o oponente esquivou", "mas escorregou o golpe", "mas travou na guarda"];
+const TAKEDOWN = ["completou uma queda dupla", "derrubou com uma queda simples", "conseguiu um slam violento", "levou a luta para o chão"];
+const TD_STUFF = ["mas a queda foi defendida", "mas sprawlou e escapou", "mas não conseguiu derrubar"];
+const CONTROL = ["mantém o controle por cima", "trabalha o ground and pound", "pressiona na guarda", "avança para a montada"];
+const GNP = ["martela com cotoveladas no chão", "despeja golpes de cima", "castiga com ground and pound"];
+const SWEEP = ["raspou e inverteu a posição", "conseguiu uma raspagem linda", "girou por cima"];
+const GETUP = ["levantou e voltou para a trocação", "conseguiu se recompor de pé"];
+const SUBS = ["uma mata-leão", "uma guilhotina", "um triângulo", "uma chave de braço", "uma kimura", "uma americana", "um katagatame"];
+const HURT = ["está machucado!", "balançou! as pernas bambearam", "sentiu o golpe e recuou cambaleando", "tropeçou para trás, em apuros"];
+const SWARM = ["parte pra cima buscando o nocaute", "vai com tudo tentando acabar a luta", "despeja golpes procurando o fim"];
+const RECOVER = ["mas aguentou e se recuperou", "mas clinçou e sobreviveu ao perigo", "mas limpou a cabeça e seguiu"];
+const SAVED = ["e o gongo salva no fim do round!", "salvo pelo gongo!"];
+const KO = ["NOCAUTE! apagou as luzes!", "caiu desacordado, acabou!", "um golpe perfeito, KO seco!"];
+const TKO = ["o árbitro intervém — TKO!", "não revida mais e o árbitro para a luta!", "castigo demais, TKO!"];
+const FOUL = ["golpe baixo! tempo para se recuperar", "dedo no olho acidental, ação interrompida", "segurou a grade e perde um ponto", "joelhada ilegal, advertência e ponto"];
+const pick = <T,>(rng: () => number, a: T[]): T => a[Math.floor(rng() * a.length)]!;
+
+// --------------------------------------------------------------------------- state
+type Tally = { dmg: number; sig: number; kd: number; ctrl: number; sub: number; td: number; foul: number };
+const newTally = (): Tally => ({ dmg: 0, sig: 0, kd: 0, ctrl: 0, sub: 0, td: 0, foul: 0 });
 
 type State = {
   name: string;
   a: Record<AttrKey, SourcedAttr>;
-  health: number;     // 0-100, KO at <= 0
-  stamina: number;    // 0-100, scales output
-  score: number;      // accumulated round-scoring value
+  health: number;
+  stamina: number;
+  t: Tally; // current-round tally
 };
-
 const v = (s: State, k: AttrKey) => s.a[k].value;
 const src = (s: State, k: AttrKey) => s.a[k].source;
+const mk = (f: FighterInput): State => ({ name: f.name, a: f.attrs, health: 100, stamina: 100, t: newTally() });
 
-function mk(f: FighterInput): State {
-  return { name: f.name, a: f.attrs, health: 100, stamina: 100, score: 0 };
+// --------------------------------------------------------------------------- judging (10-point must)
+function marginFromDiff(absd: number, kd: number): number {
+  if (kd >= 2 || absd >= 42) return 3;      // 10-7
+  if (kd >= 1 || absd >= 20) return 2;      // 10-8
+  if (absd < 2) return 0;                    // 10-10
+  return 1;                                  // 10-9
+}
+function scoreOneJudge(domDiff: number, kd: number, foulA: number, foulB: number) {
+  const aWins = domDiff >= 0;
+  const margin = marginFromDiff(Math.abs(domDiff), kd);
+  let a = 10, b = 10;
+  if (margin > 0) { if (aWins) b = 10 - margin; else a = 10 - margin; }
+  return { a: a - foulA, b: b - foulB };
 }
 
-/** Run a full fight. */
-export function simulate(
-  fa: FighterInput,
-  fb: FighterInput,
-  opts: SimOptions = {}
-): SimResult {
+export function simulate(fa: FighterInput, fb: FighterInput, opts: SimOptions = {}): SimResult {
   const rounds = opts.rounds ?? 3;
   const seed = opts.seed ?? ((Math.random() * 2 ** 32) >>> 0);
-  const rnd = mulberry32(seed);
-
-  const A = mk(fa);
-  const B = mk(fb);
+  const rng = mulberry32(seed);
+  const A = mk(fa), B = mk(fb);
   const events: SimEvent[] = [];
+  const judges: JudgeCard[] = [{ a: 0, b: 0 }, { a: 0, b: 0 }, { a: 0, b: 0 }];
+  const roundScores: { round: number; a: number; b: number }[] = [];
 
   let finish: { winner: State; loser: State; method: Method; round: number; clock: number } | null = null;
 
+  const ev = (round: number, elapsed: number, type: SimEventType, actor?: State, opt?: Partial<SimEvent>) =>
+    events.push({ round, clock: fmtClock(elapsed), type, actor: actor?.name, ...opt });
+
   for (let round = 1; round <= rounds && !finish; round++) {
-    // ground position for this round: null = standing, else top fighter
+    A.t = newTally(); B.t = newTally();
     let top: State | null = null;
     let elapsed = 0;
-    events.push({ round, clock: "0:00", type: "round_start" });
+    let hurtState: State | null = null; // who is hurt right now
+    events.push({ round, clock: "0:00", type: "round_start", detail: `Round ${round}` });
 
-    // exchanges scale with the pair's volume and current stamina
     const pace = (v(A, "volume") + v(B, "volume")) / 2;
-    const nEx = clamp(Math.round(6 + pace / 12), 6, 16);
+    const nEx = clamp(Math.round(7 + pace / 11), 7, 16);
     const dt = ROUND_SECONDS / nEx;
 
     for (let i = 0; i < nEx && !finish; i++) {
       elapsed += dt;
-      const att = i % 2 === 0 ? A : B; // alternate initiative
+      const att = i % 2 === 0 ? A : B;
       const def = att === A ? B : A;
 
+      // rare foul — the acting fighter commits it and loses a point this round
+      if (rng() < 0.02) {
+        att.t.foul += 1;
+        def.health = clamp(def.health + 4, 0, 100); // brief recovery time
+        ev(round, elapsed, "foul", att, { target: def.name, detail: pick(rng, FOUL) });
+        continue;
+      }
+
       if (top) {
-        // ----- ground -----
         const bottom: State = top === A ? B : A;
-        // top control damage + stamina tax
         const ctrlDmg = (2 + v(top, "groundControl") * 0.04) * (top.stamina / 100);
         bottom.health -= ctrlDmg;
-        top.score += 2;
+        top.t.dmg += ctrlDmg; top.t.ctrl += dt;
         bottom.stamina -= 1.5;
-        events.push({
-          round, clock: fmtClock(elapsed), type: "control",
-          actor: top.name, target: bottom.name,
-          attribute: "groundControl", source: src(top, "groundControl"),
-          detail: `controle por cima (-${ctrlDmg.toFixed(0)})`,
+        ev(round, elapsed, rng() < 0.5 ? "ground_strikes" : "control", top, {
+          target: bottom.name, attribute: "groundControl", source: src(top, "groundControl"),
+          detail: pick(rng, rng() < 0.5 ? GNP : CONTROL),
         });
 
-        // submission attempt
         const subP = clamp((v(top, "submission") - v(bottom, "submission") * 0.6) / 220 + 0.03, 0.01, 0.22);
-        if (rnd() < subP) {
-          events.push({
-            round, clock: fmtClock(elapsed), type: "submission_attempt",
-            actor: top.name, target: bottom.name,
-            attribute: "submission", source: src(top, "submission"),
-          });
+        if (rng() < subP) {
+          const name = pick(rng, SUBS);
+          top.t.sub += 1;
+          ev(round, elapsed, "submission_attempt", top, { target: bottom.name, attribute: "submission", source: src(top, "submission"), detail: `ameaça com ${name}` });
           const finishP = clamp((v(top, "submission") - v(bottom, "fightIq") * 0.4) / 200, 0.05, 0.6) * (1 - bottom.stamina / 300);
-          if (rnd() < finishP) {
+          if (rng() < finishP) {
             finish = { winner: top, loser: bottom, method: "Submission", round, clock: elapsed };
-            events.push({
-              round, clock: fmtClock(elapsed), type: "submission",
-              actor: top.name, target: bottom.name,
-              attribute: "submission", source: src(top, "submission"),
-              detail: "finalização!",
-            });
+            ev(round, elapsed, "submission", top, { target: bottom.name, attribute: "submission", source: src(top, "submission"), detail: `finalizou com ${name}!` });
             break;
           }
         }
-        // bottom escape / sweep
         const escP = clamp((v(bottom, "takedownDefense") + v(bottom, "groundControl") - v(top, "groundControl")) / 300 + 0.08, 0.03, 0.5);
-        if (rnd() < escP) {
-          const swept = rnd() < clamp(v(bottom, "groundControl") / 250, 0.05, 0.4);
-          if (swept) {
+        if (rng() < escP) {
+          if (rng() < clamp(v(bottom, "groundControl") / 250, 0.05, 0.4)) {
             top = bottom;
-            events.push({
-              round, clock: fmtClock(elapsed), type: "sweep",
-              actor: bottom.name, target: att === bottom ? def.name : att.name,
-              attribute: "groundControl", source: src(bottom, "groundControl"),
-              detail: "raspagem, inverteu a posição",
-            });
+            ev(round, elapsed, "sweep", bottom, { attribute: "groundControl", source: src(bottom, "groundControl"), detail: pick(rng, SWEEP) });
           } else {
             top = null;
-            events.push({
-              round, clock: fmtClock(elapsed), type: "control",
-              actor: bottom.name, attribute: "takedownDefense", source: src(bottom, "takedownDefense"),
-              detail: "levantou, luta volta para a trocação",
-            });
+            ev(round, elapsed, "scramble", bottom, { attribute: "takedownDefense", source: src(bottom, "takedownDefense"), detail: pick(rng, GETUP) });
           }
         }
       } else {
-        // ----- standing -----
-        // takedown propensity for wrestlers
+        // takedown attempt for wrestlers
         const tdProp = clamp(v(att, "takedownOffense") / 100 * 0.3, 0, 0.35);
-        if (rnd() < tdProp) {
-          const tdP = sigmoid((v(att, "takedownOffense") - v(def, "takedownDefense")) / 18);
-          if (rnd() < tdP) {
-            top = att;
-            att.score += 3;
-            events.push({
-              round, clock: fmtClock(elapsed), type: "takedown",
-              actor: att.name, target: def.name,
-              attribute: "takedownOffense", source: src(att, "takedownOffense"),
-              detail: "queda completada",
-            });
+        if (rng() < tdProp) {
+          if (rng() < sigmoid((v(att, "takedownOffense") - v(def, "takedownDefense")) / 18)) {
+            top = att; att.t.td += 1;
+            ev(round, elapsed, "takedown", att, { target: def.name, attribute: "takedownOffense", source: src(att, "takedownOffense"), detail: pick(rng, TAKEDOWN) });
           } else {
-            events.push({
-              round, clock: fmtClock(elapsed), type: "takedown_stuffed",
-              actor: def.name, target: att.name,
-              attribute: "takedownDefense", source: src(def, "takedownDefense"),
-              detail: "defendeu a queda",
-            });
+            ev(round, elapsed, "takedown_stuffed", def, { target: att.name, attribute: "takedownDefense", source: src(def, "takedownDefense"), detail: pick(rng, TD_STUFF) });
           }
           continue;
         }
 
-        // striking exchange
-        const landP = clamp(0.35 + (v(att, "volume") - v(def, "fightIq") * 0.3) / 200, 0.15, 0.85) * (0.6 + att.stamina / 250);
-        if (rnd() < landP) {
-          const isKick = rnd() < clamp(v(att, "kicks") / 220, 0.05, 0.5);
-          const chinMit = 1 - v(def, "chin") / 400;
-          const dmg = (5 + v(att, "power") * 0.13 + (isKick ? v(att, "kicks") * 0.03 : 0)) * (att.stamina / 100) * chinMit;
-          def.health -= dmg;
-          att.score += isKick ? 2 : 1;
-          events.push({
-            round, clock: fmtClock(elapsed), type: "strike",
-            actor: att.name, target: def.name,
-            attribute: isKick ? "kicks" : "power",
-            source: isKick ? src(att, "kicks") : src(att, "power"),
-            detail: `${isKick ? "chute" : "golpe"} conectado (-${dmg.toFixed(0)})`,
-          });
+        // striking
+        const landP = clamp(0.4 + (v(att, "volume") - v(def, "fightIq") * 0.3) / 200, 0.18, 0.85) * (0.6 + att.stamina / 250);
+        if (rng() >= landP) {
+          if (rng() < 0.4) ev(round, elapsed, "miss", att, { target: def.name, detail: pick(rng, MISS) });
+          continue;
+        }
+        const isKick = rng() < clamp(v(att, "kicks") / 220, 0.05, 0.5);
+        const chinMit = 1 - v(def, "chin") / 400;
+        let phrase: string, headKick = false;
+        if (isKick) {
+          const r = rng();
+          if (r < 0.5) phrase = pick(rng, KICK_LOW);
+          else if (r < 0.82) phrase = pick(rng, KICK_BODY);
+          else { phrase = pick(rng, KICK_HEAD); headKick = true; }
+        } else phrase = pick(rng, PUNCH);
+        const dmg = (5 + v(att, "power") * 0.13 + (isKick ? v(att, "kicks") * 0.03 : 0) + (headKick ? 6 : 0)) * (att.stamina / 100) * chinMit;
+        def.health -= dmg;
+        att.t.dmg += dmg; att.t.sig += 1;
+        const big = dmg >= 12 || headKick;
+        ev(round, elapsed, isKick ? "kick" : big ? "big_strike" : "strike", att, {
+          target: def.name, attribute: isKick ? "kicks" : "power",
+          source: isKick ? src(att, "kicks") : src(att, "power"),
+          detail: `acertou ${phrase} (-${dmg.toFixed(0)})`,
+        });
 
-          // knockdown chance on clean power shots
-          const kdP = clamp((v(att, "power") - v(def, "chin")) / 320 + 0.02, 0.004, 0.22) * (att.stamina / 100);
-          if (rnd() < kdP) {
-            def.health -= 12;
-            events.push({
-              round, clock: fmtClock(elapsed), type: "knockdown",
-              actor: att.name, target: def.name,
-              attribute: "power", source: src(att, "power"),
-              detail: "queda por golpe!",
-            });
-            // survival depends on chin + recovery + remaining health
-            const survive = sigmoid((v(def, "chin") + v(def, "recovery") + def.health - 120) / 35);
-            if (def.health <= 0 || rnd() > survive) {
-              finish = { winner: att, loser: def, method: "KO/TKO", round, clock: elapsed };
-              events.push({
-                round, clock: fmtClock(elapsed), type: def.health <= 0 ? "ko" : "tko",
-                actor: att.name, target: def.name,
-                attribute: "power", source: src(att, "power"),
-                detail: "nocaute!",
-              });
-              break;
-            } else {
-              events.push({
-                round, clock: fmtClock(elapsed), type: "control",
-                actor: def.name, attribute: "recovery", source: src(def, "recovery"),
-                detail: "aguentou e se recuperou",
-              });
-            }
-          }
-          if (def.health <= 0 && !finish) {
+        // knockdown / hurt
+        const kdP = clamp((v(att, "power") - v(def, "chin")) / 320 + 0.02 + (headKick ? 0.08 : 0), 0.004, 0.3) * (att.stamina / 100);
+        if (rng() < kdP || def.health < 28) {
+          def.health -= 10; att.t.kd += 1;
+          ev(round, elapsed, "knockdown", att, { target: def.name, attribute: "power", source: src(att, "power"), detail: "QUEDA! mandou ao chão!" });
+          hurtState = def;
+          ev(round, elapsed, "hurt", def, { detail: pick(rng, HURT) });
+          ev(round, elapsed, "swarm", att, { target: def.name, detail: pick(rng, SWARM) });
+          const survive = sigmoid((v(def, "chin") + v(def, "recovery") + def.health - 115) / 30);
+          if (def.health <= 0 || rng() > survive) {
             finish = { winner: att, loser: def, method: "KO/TKO", round, clock: elapsed };
-            events.push({
-              round, clock: fmtClock(elapsed), type: "tko",
-              actor: att.name, target: def.name,
-              attribute: "power", source: src(att, "power"),
-              detail: "interrompido por golpes!",
-            });
+            ev(round, elapsed, def.health <= 0 ? "ko" : "tko", att, { target: def.name, attribute: "power", source: src(att, "power"), detail: pick(rng, def.health <= 0 ? KO : TKO) });
             break;
+          } else {
+            ev(round, elapsed, "recover", def, { attribute: "recovery", source: src(def, "recovery"), detail: pick(rng, RECOVER) });
+            hurtState = null;
           }
         }
       }
     }
-
     if (finish) break;
 
-    // end-of-round: stamina drain (cardio mitigates) + partial recovery
-    for (const s of [A, B]) {
-      const drain = 10 + (100 - v(s, "cardio")) * 0.12;
-      s.stamina = clamp(s.stamina - drain + v(s, "recovery") * 0.05, 5, 100);
-      s.health = clamp(s.health + v(s, "recovery") * 0.06, 0, 100);
+    // saved by the bell flavor
+    if (hurtState) ev(round, ROUND_SECONDS, "saved_by_bell", hurtState, { detail: pick(rng, SAVED) });
+
+    // ---- score the round (true) + 3 judges ----
+    const dom = (s: State) => s.t.dmg + s.t.kd * 30 + s.t.sig * 0.4 + s.t.ctrl * 0.04 + s.t.sub * 5 + s.t.td * 4;
+    const diff = dom(A) - dom(B);
+    const kd = A.t.kd + B.t.kd;
+    const trueScore = scoreOneJudge(diff, kd, A.t.foul, B.t.foul);
+    roundScores.push({ round, a: trueScore.a, b: trueScore.b });
+    const winnerName = trueScore.a === trueScore.b ? "empate" : trueScore.a > trueScore.b ? A.name : B.name;
+    events.push({ round, clock: "5:00", type: "round_end", detail: `Fim do round ${round} — ${Math.max(trueScore.a, trueScore.b)}-${Math.min(trueScore.a, trueScore.b)} ${winnerName}` });
+    for (let j = 0; j < 3; j++) {
+      const noise = (rng() * 2 - 1) * 7;
+      const jc = scoreOneJudge(diff + noise, kd, A.t.foul, B.t.foul);
+      judges[j]!.a += jc.a; judges[j]!.b += jc.b;
     }
-    events.push({ round, clock: "5:00", type: "round_end" });
+
+    // end-of-round recovery / stamina
+    for (const s of [A, B]) {
+      s.stamina = clamp(s.stamina - (10 + (100 - v(s, "cardio")) * 0.12) + v(s, "recovery") * 0.05, 5, 100);
+      s.health = clamp(s.health + 8 + v(s, "recovery") * 0.07, 0, 100);
+    }
   }
 
-  // ----- resolve result -----
+  // ---------- resolve ----------
   if (finish) {
     return {
-      winner: finish.winner.name,
-      loser: finish.loser.name,
-      method: finish.method,
-      round: finish.round,
-      clock: fmtClock(finish.clock),
-      rounds,
-      scorecards: { a: Math.round(A.score), b: Math.round(B.score) },
-      events,
-      seed,
+      winner: finish.winner.name, loser: finish.loser.name, method: finish.method,
+      decision: finish.method === "Submission" ? "Finalização" : "Nocaute",
+      round: finish.round, clock: fmtClock(finish.clock), rounds,
+      judges, roundScores, events, seed,
     };
   }
 
-  // decision by accumulated score (+ remaining health, fightIq tiebreak)
-  const aTotal = A.score + A.health * 0.3 + v(A, "fightIq") * 0.1;
-  const bTotal = B.score + B.health * 0.3 + v(B, "fightIq") * 0.1;
-  let winner: string | null, loser: string | null, method: Method;
-  if (Math.abs(aTotal - bTotal) < 0.5) {
-    winner = null; loser = null; method = "Draw";
-  } else if (aTotal > bTotal) {
-    winner = A.name; loser = B.name; method = "Decision";
+  // decision by 3 judges
+  let cA = 0, cB = 0, cD = 0;
+  for (const j of judges) { if (j.a > j.b) cA++; else if (j.b > j.a) cB++; else cD++; }
+  let winner: string | null, loser: string | null, method: Method, decision: string;
+  if (cA >= 2 || cB >= 2) {
+    const aWins = cA > cB;
+    winner = aWins ? A.name : B.name; loser = aWins ? B.name : A.name; method = "Decision";
+    const w = aWins ? cA : cB;
+    decision = w === 3 ? "Decisão Unânime" : cD >= 1 ? "Decisão Majoritária" : "Decisão Dividida";
   } else {
-    winner = B.name; loser = A.name; method = "Decision";
+    winner = null; loser = null; method = "Draw";
+    decision = cD >= 2 ? "Empate Majoritário" : "Empate Dividido";
   }
-  events.push({ round: rounds, clock: "5:00", type: "decision", detail: method === "Draw" ? "empate" : `decisão para ${winner}` });
+  events.push({ round: rounds, clock: "5:00", type: "decision", detail: method === "Draw" ? "Vai para os cartões... EMPATE!" : `Vai para os cartões... ${decision}: ${winner}!` });
 
-  return {
-    winner, loser, method, round: rounds, clock: "5:00", rounds,
-    scorecards: { a: Math.round(A.score), b: Math.round(B.score) },
-    events, seed,
-  };
+  return { winner, loser, method, decision, round: rounds, clock: "5:00", rounds, judges, roundScores, events, seed };
 }
 
-/** Build a FighterInput from a name + {attrKey: {value, source}} map, filling
- *  any missing attribute with a neutral 50 (so partial builds still simulate). */
-export function makeFighter(
-  name: string,
-  attrs: Partial<Record<AttrKey, SourcedAttr>>
-): FighterInput {
+/** Build a FighterInput from a name + partial attrs, filling gaps with 50. */
+export function makeFighter(name: string, attrs: Partial<Record<AttrKey, SourcedAttr>>): FighterInput {
   const full = {} as Record<AttrKey, SourcedAttr>;
   for (const k of ATTR_KEYS) full[k] = attrs[k] ?? { value: 50 };
   return { name, attrs: full };

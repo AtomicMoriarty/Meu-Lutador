@@ -1,73 +1,32 @@
-export type AttributeSlot = { attribute_name: string; label: string };
-
-export type DrawResponse = {
-  weight_class: string;
-  window_months: number;
-  pool_size: number;
-  anchor_event: {
-    id: string;
-    name: string;
-    ufc_number: number | null;
-    event_date: string | null;
-    location: string | null;
-  };
-  attribute_slots: AttributeSlot[];
-};
-
-export type Confidence = "alto" | "medio" | "manual";
+// Static attribute slots (combat attributes the player builds). No weight/era.
+export const ATTRIBUTE_SLOTS: { attribute_name: string; label: string; emoji: string }[] = [
+  { attribute_name: "poder_de_mao", label: "Poder de mão", emoji: "🥊" },
+  { attribute_name: "volume_velocidade", label: "Volume / Velocidade", emoji: "⚡" },
+  { attribute_name: "chute_perna", label: "Chute / Perna", emoji: "🦵" },
+  { attribute_name: "cardio", label: "Cardio", emoji: "🫁" },
+  { attribute_name: "queixo", label: "Queixo", emoji: "🦷" },
+  { attribute_name: "recuperacao", label: "Recuperação", emoji: "❤️‍🩹" },
+  { attribute_name: "wrestling_quedas", label: "Wrestling / Quedas", emoji: "🤼" },
+  { attribute_name: "defesa_queda", label: "Defesa de queda", emoji: "🛡️" },
+  { attribute_name: "controle_chao", label: "Controle no chão", emoji: "🔒" },
+  { attribute_name: "finalizacao", label: "Finalização", emoji: "🧶" },
+  { attribute_name: "qi_luta", label: "QI de luta", emoji: "🧠" },
+];
 
 export type SlotOption = {
   fighter_id: string;
   name: string;
   nickname: string | null;
   value: number;
-  confidence: Confidence;
 };
 
-export type SlotOptionsResponse = {
-  weight_class: string;
-  attribute: string;
-  count: number;
-  options: SlotOption[];
+export type FullFighter = {
+  fighter_id: string;
+  name: string;
+  nickname: string | null;
+  overall: number;
+  attrs: Record<string, number>;
 };
 
-export type SimEvent = {
-  round: number;
-  clock: string;
-  type: string;
-  actor?: string;
-  target?: string;
-  attribute?: string;
-  source?: string;
-  detail?: string;
-};
-
-export type SimResult = {
-  winner: string | null;
-  loser: string | null;
-  method: "KO/TKO" | "Submission" | "Decision" | "Draw";
-  round: number;
-  clock: string;
-  rounds: number;
-  scorecards: { a: number; b: number };
-  events: SimEvent[];
-  seed: number;
-};
-
-export type SimulateResponse = {
-  result: SimResult;
-  narrative: string | null;
-  fighters: unknown;
-};
-
-export type BuiltFighter = { name: string; picks: Record<string, string> };
-
-export const WEIGHT_CLASSES: { code: string; label: string }[] = [
-  { code: "lightweight", label: "Peso-leve" },
-  { code: "welterweight", label: "Peso-meio-médio" },
-  { code: "heavyweight", label: "Peso-pesado" },
-];
-
-export const WC_LABEL: Record<string, string> = Object.fromEntries(
-  WEIGHT_CLASSES.map((w) => [w.code, w.label]),
-);
+// A built fighter: per attribute_name, the chosen source option.
+export type Build = Record<string, SlotOption>;
