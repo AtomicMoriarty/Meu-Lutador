@@ -66,8 +66,9 @@ export default function Page() {
 
   const [name, setName] = useState("Meu Lutador");
   const [build, setBuild] = useState<Build>({});
-  const [roll, setRoll] = useState<FullFighter[]>([]);
+  const [batch, setBatch] = useState<FullFighter[]>([]);
   const [rolling, setRolling] = useState(false);
+  const [rerolls, setRerolls] = useState(3);
   const [selected, setSelected] = useState<FullFighter | null>(null);
 
   const [player, setPlayer] = useState<FighterInput | null>(null);
@@ -78,26 +79,38 @@ export default function Page() {
   const [playerWon, setPlayerWon] = useState(false);
   const [oppName, setOppName] = useState("");
 
-  async function rollDice() {
+  async function fetchBatch() {
     setRolling(true);
     try {
       const r = await randomFullFighters(10);
-      setRoll(r);
+      setBatch(r);
     } catch (e) {
       setError(String((e as Error).message));
     } finally {
       setRolling(false);
     }
   }
+  // Main roll: only when the current batch was resolved (assigned), so you can't
+  // fish endlessly. Re-roll: discard the current 10 without assigning — max 3/session.
+  function rollMain() {
+    if (rolling || batch.length > 0) return;
+    void fetchBatch();
+  }
+  function reroll() {
+    if (rolling || batch.length === 0 || rerolls <= 0) return;
+    setRerolls((n) => n - 1);
+    void fetchBatch();
+  }
 
   function newRun() {
     setBuild({});
-    setRoll([]);
+    setBatch([]);
+    setRerolls(3);
     setRecord({ w: 0, l: 0 });
     setIdx(0);
     setResult(null);
     setStage("build");
-    void rollDice();
+    void fetchBatch();
   }
 
   function startFight(index: number, p: FighterInput, opps: FullFighter[]) {
@@ -191,16 +204,27 @@ export default function Page() {
 
                     {/* DADO + sorteio */}
                     <div className="card flex flex-col items-center gap-3 p-4">
-                      <Dice rolling={rolling} onRoll={rollDice} />
+                      <Dice rolling={rolling} disabled={batch.length > 0} onRoll={rollMain} />
                       <p className="text-center text-xs text-mist">
-                        Role o dado, toque num lutador e escolha <strong className="text-white">em qual atributo</strong> encaixá-lo.
-                        Role de novo pra sortear outros 10.
+                        Role o dado, toque num lutador e escolha <strong className="text-white">o atributo</strong> dele.
+                        Só depois você rola de novo. Re-sorteios: <strong className="text-gold">{rerolls}</strong> na sessão.
                       </p>
+                      {batch.length > 0 && (
+                        <button
+                          onClick={reroll}
+                          disabled={rolling || rerolls <= 0}
+                          className="rounded-full border border-line bg-white/5 px-4 py-1.5 text-xs font-bold text-mist-2 transition hover:text-white disabled:opacity-40"
+                        >
+                          🎲 Re-sortear estes 10 ({rerolls})
+                        </button>
+                      )}
                       <div className="grid w-full grid-cols-2 gap-2">
-                        {rolling && roll.length === 0 ? (
+                        {rolling && batch.length === 0 ? (
                           <div className="col-span-2 grid place-items-center py-6"><Spinner label="Sorteando…" /></div>
+                        ) : batch.length === 0 ? (
+                          <p className="col-span-2 py-6 text-center text-sm text-mist">Role o dado para sortear 10 lutadores.</p>
                         ) : (
-                          roll.map((f, i) => (
+                          batch.map((f, i) => (
                             <motion.button
                               key={f.fighter_id + i}
                               initial={{ opacity: 0, y: 10, scale: 0.97 }}
@@ -312,6 +336,7 @@ export default function Page() {
           if (selected) {
             const value = num(selected.attrs?.[attr]);
             setBuild((b) => ({ ...b, [attr]: { fighter_id: selected.fighter_id, name: selected.name, nickname: selected.nickname, value } }));
+            setBatch([]); // consume the roll — you must roll again for the next pick
           }
           setSelected(null);
         }}

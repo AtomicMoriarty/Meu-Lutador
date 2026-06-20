@@ -2,20 +2,20 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-export function Dice({ rolling, onRoll }: { rolling: boolean; onRoll: () => void }) {
+export function Dice({ rolling, disabled, onRoll }: { rolling: boolean; disabled?: boolean; onRoll: () => void }) {
   const [spins, setSpins] = useState(0);
   function handle() {
-    if (rolling) return;
+    if (rolling || disabled) return;
     setSpins((s) => s + 1);
     onRoll();
   }
   return (
     <motion.button
       onClick={handle}
-      disabled={rolling}
+      disabled={rolling || disabled}
       whileTap={{ scale: 0.92 }}
       aria-label="Sortear 10 lutadores"
-      className="group relative grid size-20 place-items-center rounded-2xl border border-gold/40 bg-gradient-to-b from-ink-3 to-ink shadow-[0_10px_40px_-12px_rgba(245,181,63,0.5)] disabled:opacity-70"
+      className="group relative grid size-20 place-items-center rounded-2xl border border-gold/40 bg-gradient-to-b from-ink-3 to-ink shadow-[0_10px_40px_-12px_rgba(245,181,63,0.5)] disabled:opacity-40"
     >
       <span className="sheen-on-idle pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden />
       <motion.span
