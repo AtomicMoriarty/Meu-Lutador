@@ -79,10 +79,16 @@ export function FightPlayback({
   let lastRound = 0;
   return (
     <div className="flex flex-col gap-4">
-      <div className="card flex items-center justify-between p-4 text-sm">
-        <span className="font-extrabold text-blood-2">{aName}</span>
-        <span className="text-xs text-mist">{result.rounds} rounds</span>
-        <span className="font-extrabold">{bName}</span>
+      <div className="card-hairline grid grid-cols-[1fr_auto_1fr] items-center gap-2 p-4 text-sm">
+        <div className="min-w-0 text-left">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-blood-2/80">Você</span>
+          <p className="truncate font-extrabold text-blood-2">{aName}</p>
+        </div>
+        <span className="display px-1 text-base text-mist">VS</span>
+        <div className="min-w-0 text-right">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-mist">Desafiante</span>
+          <p className="truncate font-extrabold text-white">{bName}</p>
+        </div>
       </div>
 
       <div ref={feedRef} className="card max-h-[46dvh] overflow-y-auto p-4">
@@ -100,8 +106,13 @@ export function FightPlayback({
           );
         })}
         {!done && (
-          <div className="py-3 text-center text-xs text-mist">
-            <button onClick={() => setN(events.length)} className="underline">pular para o fim</button>
+          <div className="sticky bottom-0 flex justify-center bg-gradient-to-t from-ink-2 to-transparent pt-4">
+            <button
+              onClick={() => setN(events.length)}
+              className="rounded-full border border-line bg-ink-3/80 px-4 py-1.5 text-xs font-bold text-mist-2 backdrop-blur transition hover:border-blood/40 hover:text-white"
+            >
+              Pular para o fim ⏭
+            </button>
           </div>
         )}
       </div>

@@ -2,9 +2,16 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Octógono dos Sonhos — Meu Lutador",
+  title: "Meu Lutador — Octógono dos Sonhos",
   description:
-    "Sorteie uma categoria e uma era, monte seu lutador herdando atributos de feras reais do UFC e simule a luta com narração.",
+    "Monte um lutador de MMA herdando cada atributo de lendas reais do UFC e encare uma escadinha de 8 lutas, narrada round a round, até o cinturão.",
+  openGraph: {
+    title: "Meu Lutador — Octógono dos Sonhos",
+    description:
+      "Herde das feras, vença as 8 lutas e conquiste o cinturão. Carreira de MMA simulada e narrada, grátis no navegador.",
+    locale: "pt_BR",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {

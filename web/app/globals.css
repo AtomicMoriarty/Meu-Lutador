@@ -1,16 +1,28 @@
 @import "tailwindcss";
 
 @theme {
+  /* ---- Surfaces (ink) ---- */
   --color-ink: #0a0a0c;
   --color-ink-2: #111115;
   --color-ink-3: #18181d;
+  --color-ink-4: #202028;
   --color-line: #26262e;
+  --color-line-2: #34343f;
+
+  /* ---- Brand ---- */
   --color-blood: #e11d2a;
   --color-blood-2: #ff3344;
+  --color-blood-3: #a30f18;
   --color-gold: #f5b53f;
+  --color-gold-2: #ffd778;
   --color-mist: #9aa0ad;
+  --color-mist-2: #c3c8d2;
 
   --font-display: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* ---- Motion tokens ---- */
+  --ease-out-quart: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-pop: cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
 
 :root {
@@ -22,6 +34,7 @@ html, body {
   color: #f4f4f6;
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
 }
 
@@ -35,24 +48,83 @@ body {
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-line-2); }
 
-@keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(225,29,42,0.5); }
-  70% { box-shadow: 0 0 0 14px rgba(225,29,42,0); }
-  100% { box-shadow: 0 0 0 0 rgba(225,29,42,0); }
+/* ---- Global focus-visible: gold ring, never on mouse ---- */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
 }
-.pulse-ring { animation: pulse-ring 1.8s infinite; }
 
-.text-glow { text-shadow: 0 0 24px rgba(225,29,42,0.45); }
-.gold-glow { text-shadow: 0 0 20px rgba(245,181,63,0.35); }
+/* =========================================================
+   Type scale helpers (broadcast / PPV display look)
+   ========================================================= */
+.eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  color: var(--color-mist);
+}
+.display {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* =========================================================
+   Surfaces & accents
+   ========================================================= */
+.text-glow { text-shadow: 0 0 24px rgba(225, 29, 42, 0.45); }
+.gold-glow { text-shadow: 0 0 20px rgba(245, 181, 63, 0.35); }
 
 .card {
   background: linear-gradient(180deg, var(--color-ink-2), var(--color-ink));
   border: 1px solid var(--color-line);
   border-radius: 1rem;
 }
+.card-hairline {
+  position: relative;
+  background: linear-gradient(180deg, var(--color-ink-2), var(--color-ink));
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+}
+/* thin gold top hairline for "championship" surfaces */
+.card-hairline::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245, 181, 63, 0.55), transparent);
+  border-radius: inherit;
+}
 
-/* ---- BackgroundGradientAnimation keyframes (Tailwind v4 has no JS config) ---- */
+/* gold foil text used for the belt / champion accents */
+.foil {
+  background: linear-gradient(100deg, #b07d20 0%, var(--color-gold) 30%, var(--color-gold-2) 50%, var(--color-gold) 70%, #b07d20 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: foil-shift 6s linear infinite;
+}
+@keyframes foil-shift {
+  to { background-position: 200% center; }
+}
+
+/* =========================================================
+   Existing fight keyframes
+   ========================================================= */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.5); }
+  70% { box-shadow: 0 0 0 14px rgba(225, 29, 42, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0); }
+}
+.pulse-ring { animation: pulse-ring 1.8s infinite; }
+
 @keyframes moveHorizontal {
   0% { transform: translateX(-50%) translateY(-10%); }
   50% { transform: translateX(50%) translateY(10%); }
@@ -96,9 +168,90 @@ body {
   60% { transform: scale(1.08); opacity: 1; filter: blur(0); }
   100% { transform: scale(1); }
 }
-.punch-in { animation: punch-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.punch-in { animation: punch-in 0.5s var(--ease-pop) both; }
 
+/* =========================================================
+   Landing (PPV) keyframes
+   ========================================================= */
+
+/* breathing octagon line-grid behind the hero */
+@keyframes octagon-breathe {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
+  50% { transform: scale(1.04) rotate(0.5deg); opacity: 0.8; }
+}
+.octagon-breathe { animation: octagon-breathe 9s ease-in-out infinite; transform-origin: center; }
+
+@keyframes octagon-spin-slow {
+  to { transform: rotate(360deg); }
+}
+.octagon-spin-slow { animation: octagon-spin-slow 80s linear infinite; transform-origin: center; }
+
+/* broadcast marquee crawl */
+@keyframes marquee-x {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.marquee-track { animation: marquee-x var(--marquee-duration, 32s) linear infinite; }
+.marquee-track.reverse { animation-direction: reverse; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* CTA sheen sweep */
+@keyframes sheen {
+  0% { transform: translateX(-120%) skewX(-18deg); }
+  60%, 100% { transform: translateX(220%) skewX(-18deg); }
+}
+.sheen-on-idle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  left: 0;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: sheen 4.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* floating teaser card */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.float-y { animation: float-y 5s ease-in-out infinite; }
+
+/* badge glow pulse */
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.55); }
+  50% { opacity: 0.85; box-shadow: 0 0 14px 2px rgba(225, 29, 42, 0.35); }
+}
+.badge-pulse { animation: badge-pulse 2.2s ease-in-out infinite; }
+
+/* live red dot */
+@keyframes live-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.live-dot { animation: live-blink 1.4s ease-in-out infinite; }
+
+/* scroll hint bob */
+@keyframes scroll-bob {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+.scroll-bob { animation: scroll-bob 1.8s ease-in-out infinite; }
+
+/* =========================================================
+   Reduced motion — kill all decorative animation
+   ========================================================= */
 @media (prefers-reduced-motion: reduce) {
   .animate-first, .animate-second, .animate-third, .animate-fourth, .animate-fifth,
-  .impact-flash, .shake, .punch-in { animation: none !important; }
+  .impact-flash, .shake, .punch-in, .pulse-ring,
+  .octagon-breathe, .octagon-spin-slow, .marquee-track, .sheen-on-idle::after,
+  .float-y, .badge-pulse, .live-dot, .scroll-bob, .foil {
+    animation: none !important;
+  }
+  .foil { background-position: 0 center; }
+  * {
+    scroll-behavior: auto !important;
+  }
 }

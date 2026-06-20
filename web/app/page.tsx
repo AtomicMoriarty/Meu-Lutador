@@ -1,5 +1,5 @@
 "use client";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useState } from "react";
 import { randomAttributeOptions, randomFullFighters } from "@/lib/api";
 import { ATTRIBUTE_SLOTS, type Build, type FullFighter, type SlotOption } from "@/lib/types";
@@ -16,6 +16,10 @@ import { SlotSheet } from "@/components/SlotSheet";
 import { FightPlayback } from "@/components/FightPlayback";
 import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
 import { HoverButton } from "@/components/ui/hover-button";
+import { MagneticCta } from "@/components/ui/magnetic-cta";
+import { BeltBadge } from "@/components/ui/belt-badge";
+import { Toast } from "@/components/ui/toast";
+import { Landing } from "@/components/Landing";
 
 type Stage = "intro" | "build" | "loading" | "fight" | "gameover" | "champion";
 const TOTAL = 8;
@@ -165,7 +169,7 @@ export default function Page() {
   const ctaLabel = playerWon ? (idx >= TOTAL - 1 ? "🏆 Ver título" : "Próxima luta →") : "Ver resultado";
 
   return (
-    <main className="relative mx-auto w-full max-w-xl px-4 pb-28 pt-6">
+    <MotionConfig reducedMotion="user">
       <div
         className="pointer-events-none fixed inset-0 -z-10 transition-opacity duration-700"
         style={{ opacity: stage === "intro" ? 0.7 : 0.3 }}
@@ -174,44 +178,62 @@ export default function Page() {
         <BackgroundGradientAnimation interactive={false} />
       </div>
 
-      <header className="mb-6 text-center">
-        <p className="text-[11px] uppercase tracking-[0.4em] text-mist">Octógono dos Sonhos</p>
-        <h1 className="text-3xl font-black tracking-tight text-glow">MEU LUTADOR</h1>
-      </header>
-
-      {error && (
-        <div className="mb-4 rounded-xl border border-blood/40 bg-blood/10 p-3 text-sm text-blood-2">{error}</div>
-      )}
+      <Toast message={error} onClose={() => setError(null)} />
 
       <AnimatePresence mode="wait">
-        {stage === "intro" && (
-          <motion.section key="intro" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
-            <div className="card p-5 text-center">
-              <p className="text-sm leading-relaxed text-white/80">
-                Monte seu lutador herdando cada atributo de uma fera real do UFC e encare a
-                <strong className="text-gold"> escadinha de 8 lutas</strong> até o cinturão.
-                As lutas 7 e 8 são <strong>co-main</strong> e <strong>main event</strong> (5 rounds).
-                Perdeu? Acabou. 8–0? Você é campeão. 🏆
-              </p>
-            </div>
-            <HoverButton className="w-full" onClick={newRun}>Começar carreira</HoverButton>
-          </motion.section>
-        )}
+        {stage === "intro" ? (
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Landing onStart={newRun} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="game"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <main className="relative mx-auto w-full max-w-xl px-4 pb-28 pt-6">
+              <header className="mb-6 text-center">
+                <p className="eyebrow">Octógono dos Sonhos</p>
+                <h1 className="display mt-1 text-3xl text-glow">MEU LUTADOR</h1>
+              </header>
 
-        {stage === "build" && (
+              <AnimatePresence mode="wait">
+                {stage === "build" && (
           <motion.section key="build" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
+            <div>
+              <p className="eyebrow">Passo 1 de 3</p>
+              <h2 className="display mt-1 text-2xl">Monte seu lutador</h2>
+            </div>
             <div className="card p-4">
-              <label className="text-[11px] uppercase tracking-widest text-mist">Nome do seu lutador</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-line bg-ink-3 px-3 py-2 font-bold outline-none focus:border-blood" />
+              <label htmlFor="fighter-name" className="eyebrow">Nome do seu lutador</label>
+              <input id="fighter-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-lg border border-line bg-ink-3 px-3 py-2 font-bold outline-none transition focus:border-blood" />
               <p className="mt-2 text-xs text-mist">Em cada atributo aparecem <strong>10 sorteados</strong> — escolha 1. Você tem <strong className="text-gold">{refreshes} re-sorteios</strong> no total.</p>
             </div>
 
             <div className="grid grid-cols-1 gap-2">
-              {ATTRIBUTE_SLOTS.map((s) => {
+              {ATTRIBUTE_SLOTS.map((s, i) => {
                 const chosen = build[s.attribute_name];
                 return (
-                  <button key={s.attribute_name} onClick={() => openSlot(s)} className={cx("flex items-center gap-3 rounded-xl border p-3 text-left transition", chosen ? "border-blood/50 bg-blood/[0.06]" : "border-line bg-white/[0.02] hover:bg-white/[0.05]")}>
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-ink-3 font-black text-gold">{chosen ? Math.round(num(chosen.value)) : s.emoji}</div>
+                  <motion.button
+                    key={s.attribute_name}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.035, 0.35), ease: [0.22, 1, 0.36, 1] }}
+                    whileTap={{ scale: 0.985 }}
+                    onClick={() => openSlot(s)}
+                    aria-label={chosen ? `${s.label}: ${chosen.name}, valor ${Math.round(num(chosen.value))}. Tocar para trocar.` : `${s.label}: tocar para sortear`}
+                    className={cx("flex items-center gap-3 rounded-xl border p-3 text-left transition", chosen ? "border-blood/50 bg-blood/[0.06]" : "border-line bg-white/[0.02] hover:bg-white/[0.05]")}
+                  >
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-ink-3 font-black text-gold">
+                      {chosen ? Math.round(num(chosen.value)) : <span aria-hidden>{s.emoji}</span>}
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[11px] uppercase tracking-wide text-mist">{s.label}</p>
                       {chosen ? (
@@ -223,8 +245,8 @@ export default function Page() {
                         <span className="text-sm text-mist">tocar para sortear</span>
                       )}
                     </div>
-                    <span className="text-mist">›</span>
-                  </button>
+                    <span className="text-mist" aria-hidden>›</span>
+                  </motion.button>
                 );
               })}
             </div>
@@ -250,41 +272,45 @@ export default function Page() {
           </motion.section>
         )}
 
-        {stage === "gameover" && (
-          <motion.section key="over" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card p-8 text-center">
-            <p className="text-5xl">💀</p>
-            <h2 className="mt-2 text-2xl font-black text-glow">Fim da campanha</h2>
-            <p className="mt-1 text-mist">Você caiu na {fightLabel(idx)}. Cartel final: <strong className="text-white">{record.w} vitórias</strong>.</p>
-            <div className="mt-5"><HoverButton className="w-full" onClick={newRun}>Tentar de novo</HoverButton></div>
-          </motion.section>
-        )}
+                {stage === "gameover" && (
+                  <motion.section key="over" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", damping: 18, stiffness: 220 }} className="card p-8 text-center">
+                    <p className="text-5xl">💀</p>
+                    <h2 className="display mt-2 text-2xl text-glow">Fim da campanha</h2>
+                    <p className="mt-1 text-mist">Você caiu na {fightLabel(idx)}. Cartel final: <strong className="text-white">{record.w} vitórias</strong>.</p>
+                    <div className="mt-6 flex justify-center"><MagneticCta className="w-full" onClick={newRun}>Tentar de novo</MagneticCta></div>
+                  </motion.section>
+                )}
 
-        {stage === "champion" && (
-          <motion.section key="champ" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", damping: 14 }} className="card overflow-hidden text-center">
-            <div className="bg-gradient-to-b from-gold/30 to-transparent p-8">
-              <p className="text-6xl">🏆</p>
-              <h2 className="punch-in mt-2 text-3xl font-black gold-glow">CAMPEÃO!</h2>
-              <p className="mt-1 text-white/80"><strong>{name}</strong> venceu as 8 lutas e conquistou o cinturão. Invicto: 8–0.</p>
-            </div>
-            <div className="p-4"><HoverButton className="w-full" onClick={newRun}>Jogar de novo</HoverButton></div>
-          </motion.section>
+                {stage === "champion" && (
+                  <motion.section key="champ" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", damping: 14 }} className="card-hairline overflow-hidden text-center">
+                    <div className="bg-gradient-to-b from-gold/30 to-transparent p-8">
+                      <BeltBadge className="mx-auto mb-3" size={88} />
+                      <h2 className="punch-in display gold-glow text-3xl">CAMPEÃO!</h2>
+                      <p className="mt-2 text-white/80"><strong>{name}</strong> venceu as 8 lutas e conquistou o cinturão. Invicto: 8–0.</p>
+                    </div>
+                    <div className="p-4"><MagneticCta tone="gold" className="w-full" onClick={newRun}>Jogar de novo</MagneticCta></div>
+                  </motion.section>
+                )}
+              </AnimatePresence>
+
+              {stage === "build" && (
+                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ink/90 backdrop-blur">
+                  <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-3">
+                    <div className="flex-1">
+                      <div className="flex justify-between text-xs text-mist">
+                        <span>{filled}/{ATTRIBUTE_SLOTS.length} montados</span>
+                        {avg > 0 && <span>média {avg}</span>}
+                      </div>
+                      <div className="mt-1"><StatBar value={(filled / ATTRIBUTE_SLOTS.length) * 100} tone="gold" /></div>
+                    </div>
+                    <HoverButton className="shrink-0 disabled:opacity-40" onClick={startCareer} disabled={busy}>Lutar →</HoverButton>
+                  </div>
+                </div>
+              )}
+            </main>
+          </motion.div>
         )}
       </AnimatePresence>
-
-      {stage === "build" && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ink/90 backdrop-blur">
-          <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-3">
-            <div className="flex-1">
-              <div className="flex justify-between text-xs text-mist">
-                <span>{filled}/{ATTRIBUTE_SLOTS.length} montados</span>
-                {avg > 0 && <span>média {avg}</span>}
-              </div>
-              <div className="mt-1"><StatBar value={(filled / ATTRIBUTE_SLOTS.length) * 100} tone="gold" /></div>
-            </div>
-            <HoverButton className="shrink-0 disabled:opacity-40" onClick={startCareer} disabled={busy}>Lutar →</HoverButton>
-          </div>
-        </div>
-      )}
 
       <SlotSheet
         slot={active}
@@ -299,6 +325,6 @@ export default function Page() {
         }}
         onClose={() => setActive(null)}
       />
-    </main>
+    </MotionConfig>
   );
 }
