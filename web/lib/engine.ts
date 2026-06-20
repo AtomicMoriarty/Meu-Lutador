@@ -5,11 +5,11 @@
 
 export type AttrKey =
   | "power" | "volume" | "kicks" | "cardio" | "chin" | "recovery"
-  | "takedownOffense" | "takedownDefense" | "groundControl" | "submission" | "fightIq";
+  | "takedownOffense" | "takedownDefense" | "groundControl" | "submission" | "fightIq" | "carisma";
 
 export const ATTR_KEYS: AttrKey[] = [
   "power", "volume", "kicks", "cardio", "chin", "recovery",
-  "takedownOffense", "takedownDefense", "groundControl", "submission", "fightIq",
+  "takedownOffense", "takedownDefense", "groundControl", "submission", "fightIq", "carisma",
 ];
 
 export const ATTR_NAME_TO_KEY: Record<string, AttrKey> = {
@@ -24,6 +24,7 @@ export const ATTR_NAME_TO_KEY: Record<string, AttrKey> = {
   controle_chao: "groundControl",
   finalizacao: "submission",
   qi_luta: "fightIq",
+  carisma: "carisma",
 };
 
 export type SourcedAttr = { value: number; source?: string };
@@ -219,8 +220,9 @@ export function simulate(fa: FighterInput, fb: FighterInput, opts: SimOptions = 
           continue;
         }
 
-        // striking
-        const landP = clamp(0.4 + (v(att, "volume") - v(def, "fightIq") * 0.3) / 200, 0.18, 0.85) * (0.6 + att.stamina / 250);
+        // striking — carisma gives a light intimidation edge (±5%)
+        const morale = 1 + clamp((v(att, "carisma") - v(def, "carisma")) / 2000, -0.05, 0.05);
+        const landP = clamp(0.4 + (v(att, "volume") - v(def, "fightIq") * 0.3) / 200, 0.18, 0.85) * (0.6 + att.stamina / 250) * morale;
         if (rng() >= landP) {
           if (rng() < 0.4) ev(round, elapsed, "miss", att, { target: def.name, detail: pick(rng, MISS) });
           continue;

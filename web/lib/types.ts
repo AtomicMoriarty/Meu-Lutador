@@ -1,4 +1,4 @@
-// Static attribute slots (combat attributes the player builds). No weight/era.
+// 12 attribute slots the player fills (combat + carisma). No weight/era framing.
 export const ATTRIBUTE_SLOTS: { attribute_name: string; label: string; emoji: string }[] = [
   { attribute_name: "poder_de_mao", label: "Poder de mão", emoji: "🥊" },
   { attribute_name: "volume_velocidade", label: "Volume / Velocidade", emoji: "⚡" },
@@ -11,14 +11,10 @@ export const ATTRIBUTE_SLOTS: { attribute_name: string; label: string; emoji: st
   { attribute_name: "controle_chao", label: "Controle no chão", emoji: "🔒" },
   { attribute_name: "finalizacao", label: "Finalização", emoji: "🧶" },
   { attribute_name: "qi_luta", label: "QI de luta", emoji: "🧠" },
+  { attribute_name: "carisma", label: "Carisma / Mic", emoji: "🎤" },
 ];
 
-export type SlotOption = {
-  fighter_id: string;
-  name: string;
-  nickname: string | null;
-  value: number;
-};
+export type AttributeSlot = (typeof ATTRIBUTE_SLOTS)[number];
 
 export type FullFighter = {
   fighter_id: string;
@@ -28,5 +24,8 @@ export type FullFighter = {
   attrs: Record<string, number>;
 };
 
-// A built fighter: per attribute_name, the chosen source option.
-export type Build = Record<string, SlotOption>;
+/** What a filled slot stores: which fighter it was inherited from + the value. */
+export type Pick = { fighter_id: string; name: string; nickname: string | null; value: number };
+
+/** The player's build: attribute_name -> chosen source. */
+export type Build = Record<string, Pick>;

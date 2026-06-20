@@ -1,13 +1,13 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
-import type { SlotOption } from "@/lib/types";
+import type { AttributeSlot, FullFighter } from "@/lib/types";
 import { Button, Spinner, StatBar, cx } from "./ui";
 
-type Slot = { attribute_name: string; label: string; emoji: string };
+const num = (x: unknown) => Number(x) || 0;
 
 export function SlotSheet({
   slot,
-  options,
+  pool,
   loading,
   current,
   refreshesLeft,
@@ -15,15 +15,19 @@ export function SlotSheet({
   onPick,
   onClose,
 }: {
-  slot: Slot | null;
-  options: SlotOption[] | undefined;
+  slot: AttributeSlot | null;
+  pool: FullFighter[];
   loading: boolean;
   current?: string;
   refreshesLeft: number;
   onRefresh: () => void;
-  onPick: (o: SlotOption) => void;
+  onPick: (f: FullFighter) => void;
   onClose: () => void;
 }) {
+  const ranked = slot
+    ? [...pool].sort((a, b) => num(b.attrs?.[slot.attribute_name]) - num(a.attrs?.[slot.attribute_name]))
+    : [];
+
   return (
     <AnimatePresence>
       {slot && (
@@ -43,42 +47,43 @@ export function SlotSheet({
           >
             <div className="flex items-center justify-between border-b border-line p-4">
               <div>
-                <p className="text-[11px] uppercase tracking-widest text-mist">Sorteados — escolha 1</p>
+                <p className="text-[11px] uppercase tracking-widest text-mist">De quem herdar este atributo</p>
                 <h3 className="text-lg font-extrabold text-glow">
                   {slot.emoji} {slot.label}
                 </h3>
               </div>
-              <button onClick={onClose} className="rounded-lg px-3 py-1 text-mist hover:bg-white/10">✕</button>
+              <button onClick={onClose} className="rounded-lg px-3 py-1 text-mist hover:bg-white/10" aria-label="Fechar">✕</button>
             </div>
 
             <div className="min-h-[200px] flex-1 overflow-y-auto p-3">
               {loading && (
                 <div className="grid place-items-center py-12">
-                  <Spinner label="Sorteando 10 lutadores…" />
+                  <Spinner label="Sorteando lutadores…" />
                 </div>
               )}
               {!loading &&
-                (options ?? []).map((o, i) => {
-                  const selected = o.fighter_id === current;
+                ranked.map((f, i) => {
+                  const val = Math.round(num(f.attrs?.[slot.attribute_name]));
+                  const selected = f.fighter_id === current;
                   return (
                     <motion.button
-                      key={o.fighter_id}
+                      key={f.fighter_id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                      onClick={() => onPick(o)}
+                      onClick={() => onPick(f)}
                       className={cx(
                         "mb-2 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition",
                         selected ? "border-blood bg-blood/10" : "border-line bg-white/[0.03] hover:bg-white/[0.06]",
                       )}
                     >
                       <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-ink-3 text-lg font-black text-gold">
-                        {Math.round(o.value)}
+                        {val}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="block truncate font-bold">{o.name}</span>
-                        {o.nickname && <p className="truncate text-xs text-mist">“{o.nickname}”</p>}
-                        <div className="mt-1.5"><StatBar value={o.value} /></div>
+                        <span className="block truncate font-bold">{f.name}</span>
+                        {f.nickname && <p className="truncate text-xs text-mist">“{f.nickname}”</p>}
+                        <div className="mt-1.5"><StatBar value={val} /></div>
                       </div>
                       {selected && <span className="text-blood">✓</span>}
                     </motion.button>
@@ -87,12 +92,7 @@ export function SlotSheet({
             </div>
 
             <div className="flex items-center gap-3 border-t border-line p-3">
-              <Button
-                variant="ghost"
-                className="flex-1"
-                onClick={onRefresh}
-                disabled={loading || refreshesLeft <= 0}
-              >
+              <Button variant="ghost" className="flex-1" onClick={onRefresh} disabled={loading || refreshesLeft <= 0}>
                 🎲 Re-sortear ({refreshesLeft})
               </Button>
               <Button variant="ghost" onClick={onClose}>Fechar</Button>

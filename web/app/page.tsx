@@ -1,8 +1,8 @@
 "use client";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useState } from "react";
-import { randomAttributeOptions, randomFullFighters } from "@/lib/api";
-import { ATTRIBUTE_SLOTS, type Build, type FullFighter, type SlotOption } from "@/lib/types";
+import { randomFullFighters } from "@/lib/api";
+import { ATTRIBUTE_SLOTS, type AttributeSlot, type Build, type FullFighter } from "@/lib/types";
 import {
   makeFighter,
   simulate,
@@ -46,7 +46,8 @@ function buildOpponents(pool: FullFighter[]): FullFighter[] {
 }
 
 function opponentFighter(o: FullFighter, index: number): FighterInput {
-  const scale = 0.9 + index * 0.035; // ramps the ladder up toward the main event
+  // Tougher ladder: ramps from ~0.95x (luta 1) up to ~1.30x (main event).
+  const scale = 0.95 + index * 0.05;
   const entries = ATTRIBUTE_SLOTS.map((s) => ({
     attr: s.attribute_name,
     value: Math.max(1, Math.min(99, Math.round(num(o.attrs?.[s.attribute_name] ?? 50) * scale))),
@@ -65,9 +66,9 @@ export default function Page() {
 
   const [name, setName] = useState("Meu Lutador");
   const [build, setBuild] = useState<Build>({});
-  const [cache, setCache] = useState<Record<string, SlotOption[]>>({});
-  const [active, setActive] = useState<(typeof ATTRIBUTE_SLOTS)[number] | null>(null);
-  const [sheetLoading, setSheetLoading] = useState(false);
+  const [pool, setPool] = useState<FullFighter[]>([]);
+  const [poolLoading, setPoolLoading] = useState(false);
+  const [active, setActive] = useState<AttributeSlot | null>(null);
   const [refreshes, setRefreshes] = useState(3);
 
   const [player, setPlayer] = useState<FighterInput | null>(null);
@@ -78,42 +79,33 @@ export default function Page() {
   const [playerWon, setPlayerWon] = useState(false);
   const [oppName, setOppName] = useState("");
 
-  async function openSlot(slot: (typeof ATTRIBUTE_SLOTS)[number]) {
-    setActive(slot);
-    if (cache[slot.attribute_name]) return;
-    setSheetLoading(true);
+  async function drawPool() {
+    setPoolLoading(true);
     try {
-      const opts = await randomAttributeOptions(slot.attribute_name, 10);
-      setCache((c) => ({ ...c, [slot.attribute_name]: opts.map((o) => ({ ...o, value: num(o.value) })) }));
+      const p = await randomFullFighters(10);
+      setPool(p);
     } catch (e) {
       setError(String((e as Error).message));
     } finally {
-      setSheetLoading(false);
-    }
-  }
-
-  async function reroll() {
-    if (!active || refreshes <= 0) return;
-    setSheetLoading(true);
-    try {
-      const opts = await randomAttributeOptions(active.attribute_name, 10);
-      setCache((c) => ({ ...c, [active.attribute_name]: opts.map((o) => ({ ...o, value: num(o.value) })) }));
-      setRefreshes((r) => r - 1);
-    } catch (e) {
-      setError(String((e as Error).message));
-    } finally {
-      setSheetLoading(false);
+      setPoolLoading(false);
     }
   }
 
   function newRun() {
     setBuild({});
-    setCache({});
+    setPool([]);
     setRefreshes(3);
     setRecord({ w: 0, l: 0 });
     setIdx(0);
     setResult(null);
     setStage("build");
+    void drawPool();
+  }
+
+  function reroll() {
+    if (refreshes <= 0 || poolLoading) return;
+    setRefreshes((r) => r - 1);
+    void drawPool();
   }
 
   function startFight(index: number, p: FighterInput, opps: FullFighter[]) {
@@ -138,8 +130,8 @@ export default function Page() {
       });
       const p = toFighter(name || "Meu Lutador", entries);
       setPlayer(p);
-      const pool = await randomFullFighters(24);
-      const opps = buildOpponents(pool);
+      const oppoolRaw = await randomFullFighters(24);
+      const opps = buildOpponents(oppoolRaw);
       if (opps.length < TOTAL) throw new Error("não foi possível montar os adversários");
       setOpponents(opps);
       setRecord({ w: 0, l: 0 });
@@ -182,22 +174,11 @@ export default function Page() {
 
       <AnimatePresence mode="wait">
         {stage === "intro" ? (
-          <motion.div
-            key="landing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          >
+          <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
             <Landing onStart={newRun} />
           </motion.div>
         ) : (
-          <motion.div
-            key="game"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          >
+          <motion.div key="game" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
             <main className="relative mx-auto w-full max-w-xl px-4 pb-28 pt-6">
               <header className="mb-6 text-center">
                 <p className="eyebrow">Octógono dos Sonhos</p>
@@ -206,71 +187,74 @@ export default function Page() {
 
               <AnimatePresence mode="wait">
                 {stage === "build" && (
-          <motion.section key="build" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
-            <div>
-              <p className="eyebrow">Passo 1 de 3</p>
-              <h2 className="display mt-1 text-2xl">Monte seu lutador</h2>
-            </div>
-            <div className="card p-4">
-              <label htmlFor="fighter-name" className="eyebrow">Nome do seu lutador</label>
-              <input id="fighter-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-lg border border-line bg-ink-3 px-3 py-2 font-bold outline-none transition focus:border-blood" />
-              <p className="mt-2 text-xs text-mist">Em cada atributo aparecem <strong>10 sorteados</strong> — escolha 1. Você tem <strong className="text-gold">{refreshes} re-sorteios</strong> no total.</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              {ATTRIBUTE_SLOTS.map((s, i) => {
-                const chosen = build[s.attribute_name];
-                return (
-                  <motion.button
-                    key={s.attribute_name}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i * 0.035, 0.35), ease: [0.22, 1, 0.36, 1] }}
-                    whileTap={{ scale: 0.985 }}
-                    onClick={() => openSlot(s)}
-                    aria-label={chosen ? `${s.label}: ${chosen.name}, valor ${Math.round(num(chosen.value))}. Tocar para trocar.` : `${s.label}: tocar para sortear`}
-                    className={cx("flex items-center gap-3 rounded-xl border p-3 text-left transition", chosen ? "border-blood/50 bg-blood/[0.06]" : "border-line bg-white/[0.02] hover:bg-white/[0.05]")}
-                  >
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-ink-3 font-black text-gold">
-                      {chosen ? Math.round(num(chosen.value)) : <span aria-hidden>{s.emoji}</span>}
+                  <motion.section key="build" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
+                    <div>
+                      <p className="eyebrow">Passo 1 de 3</p>
+                      <h2 className="display mt-1 text-2xl">Monte seu lutador</h2>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] uppercase tracking-wide text-mist">{s.label}</p>
-                      {chosen ? (
-                        <>
-                          <span className="block truncate font-bold">{chosen.name}</span>
-                          <div className="mt-1"><StatBar value={num(chosen.value)} /></div>
-                        </>
-                      ) : (
-                        <span className="text-sm text-mist">tocar para sortear</span>
-                      )}
+                    <div className="card p-4">
+                      <label htmlFor="fighter-name" className="eyebrow">Nome do seu lutador</label>
+                      <input id="fighter-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-lg border border-line bg-ink-3 px-3 py-2 font-bold outline-none transition focus:border-blood" />
+                      <p className="mt-2 text-xs text-mist">
+                        Sorteamos <strong className="text-white">10 feras</strong>. Em cada atributo, escolha de qual delas herdar — pode repetir a mesma fera.
+                        Você tem <strong className="text-gold">{refreshes} re-sorteios</strong>.
+                      </p>
                     </div>
-                    <span className="text-mist" aria-hidden>›</span>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </motion.section>
-        )}
 
-        {stage === "loading" && (
-          <motion.section key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="card grid place-items-center gap-4 p-10">
-              <div className="pulse-ring grid h-16 w-16 place-items-center rounded-full bg-blood text-2xl">🥊</div>
-              <Spinner label="Montando o card…" />
-            </div>
-          </motion.section>
-        )}
+                    <div className="grid grid-cols-1 gap-2">
+                      {ATTRIBUTE_SLOTS.map((s, i) => {
+                        const chosen = build[s.attribute_name];
+                        return (
+                          <motion.button
+                            key={s.attribute_name}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: Math.min(i * 0.03, 0.32), ease: [0.22, 1, 0.36, 1] }}
+                            whileTap={{ scale: 0.985 }}
+                            onClick={() => setActive(s)}
+                            aria-label={chosen ? `${s.label}: ${chosen.name}, valor ${Math.round(num(chosen.value))}. Tocar para trocar.` : `${s.label}: tocar para escolher`}
+                            className={cx("flex items-center gap-3 rounded-xl border p-3 text-left transition", chosen ? "border-blood/50 bg-blood/[0.06]" : "border-line bg-white/[0.02] hover:bg-white/[0.05]")}
+                          >
+                            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-ink-3 font-black text-gold">
+                              {chosen ? Math.round(num(chosen.value)) : <span aria-hidden>{s.emoji}</span>}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] uppercase tracking-wide text-mist">{s.label}</p>
+                              {chosen ? (
+                                <>
+                                  <span className="block truncate font-bold">{chosen.name}</span>
+                                  <div className="mt-1"><StatBar value={num(chosen.value)} /></div>
+                                </>
+                              ) : (
+                                <span className="text-sm text-mist">tocar para escolher</span>
+                              )}
+                            </div>
+                            <span className="text-mist" aria-hidden>›</span>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </motion.section>
+                )}
 
-        {stage === "fight" && result && player && (
-          <motion.section key={`fight-${idx}`} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className={cx("rounded-full px-3 py-1 font-bold", idx >= 6 ? "bg-gold/20 text-gold" : "bg-blood/15 text-blood-2")}>{fightLabel(idx)} · {roundsFor(idx)} rounds</span>
-              <span className="text-mist">Cartel {record.w}–{record.l} · {idx + 1}/{TOTAL}</span>
-            </div>
-            <FightPlayback result={result} aName={player.name} bName={oppName} playerWon={playerWon} ctaLabel={ctaLabel} onContinue={afterFight} />
-          </motion.section>
-        )}
+                {stage === "loading" && (
+                  <motion.section key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <div className="card grid place-items-center gap-4 p-10">
+                      <div className="pulse-ring grid h-16 w-16 place-items-center rounded-full bg-blood text-2xl">🥊</div>
+                      <Spinner label="Montando o card…" />
+                    </div>
+                  </motion.section>
+                )}
+
+                {stage === "fight" && result && player && (
+                  <motion.section key={`fight-${idx}`} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className={cx("rounded-full px-3 py-1 font-bold", idx >= 6 ? "bg-gold/20 text-gold" : "bg-blood/15 text-blood-2")}>{fightLabel(idx)} · {roundsFor(idx)} rounds</span>
+                      <span className="text-mist">Cartel {record.w}–{record.l} · {idx + 1}/{TOTAL}</span>
+                    </div>
+                    <FightPlayback result={result} aName={player.name} bName={oppName} playerWon={playerWon} ctaLabel={ctaLabel} onContinue={afterFight} />
+                  </motion.section>
+                )}
 
                 {stage === "gameover" && (
                   <motion.section key="over" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", damping: 18, stiffness: 220 }} className="card p-8 text-center">
@@ -314,13 +298,19 @@ export default function Page() {
 
       <SlotSheet
         slot={active}
-        options={active ? cache[active.attribute_name] : undefined}
-        loading={sheetLoading}
+        pool={pool}
+        loading={poolLoading}
         current={active ? build[active.attribute_name]?.fighter_id : undefined}
         refreshesLeft={refreshes}
         onRefresh={reroll}
-        onPick={(o) => {
-          if (active) setBuild((b) => ({ ...b, [active.attribute_name]: o }));
+        onPick={(f) => {
+          if (active) {
+            const value = num(f.attrs?.[active.attribute_name]);
+            setBuild((b) => ({
+              ...b,
+              [active.attribute_name]: { fighter_id: f.fighter_id, name: f.name, nickname: f.nickname, value },
+            }));
+          }
           setActive(null);
         }}
         onClose={() => setActive(null)}
