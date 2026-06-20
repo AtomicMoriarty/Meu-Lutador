@@ -2,7 +2,7 @@
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useState } from "react";
 import { randomFullFighters } from "@/lib/api";
-import { ATTRIBUTE_SLOTS, type AttributeSlot, type Build, type FullFighter } from "@/lib/types";
+import { ATTRIBUTE_SLOTS, type Build, type FullFighter } from "@/lib/types";
 import {
   makeFighter,
   simulate,
@@ -12,7 +12,8 @@ import {
   type SimResult,
 } from "@/lib/engine";
 import { Spinner, StatBar, cx } from "@/components/ui";
-import { SlotSheet } from "@/components/SlotSheet";
+import { Dice } from "@/components/ui/dice";
+import { FighterAssignSheet } from "@/components/FighterAssignSheet";
 import { FightPlayback } from "@/components/FightPlayback";
 import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
 import { HoverButton } from "@/components/ui/hover-button";
@@ -46,8 +47,7 @@ function buildOpponents(pool: FullFighter[]): FullFighter[] {
 }
 
 function opponentFighter(o: FullFighter, index: number): FighterInput {
-  // Tougher ladder: ramps from ~0.95x (luta 1) up to ~1.30x (main event).
-  const scale = 0.95 + index * 0.05;
+  const scale = 0.95 + index * 0.05; // tougher toward the main event
   const entries = ATTRIBUTE_SLOTS.map((s) => ({
     attr: s.attribute_name,
     value: Math.max(1, Math.min(99, Math.round(num(o.attrs?.[s.attribute_name] ?? 50) * scale))),
@@ -66,10 +66,9 @@ export default function Page() {
 
   const [name, setName] = useState("Meu Lutador");
   const [build, setBuild] = useState<Build>({});
-  const [pool, setPool] = useState<FullFighter[]>([]);
-  const [poolLoading, setPoolLoading] = useState(false);
-  const [active, setActive] = useState<AttributeSlot | null>(null);
-  const [refreshes, setRefreshes] = useState(3);
+  const [roll, setRoll] = useState<FullFighter[]>([]);
+  const [rolling, setRolling] = useState(false);
+  const [selected, setSelected] = useState<FullFighter | null>(null);
 
   const [player, setPlayer] = useState<FighterInput | null>(null);
   const [opponents, setOpponents] = useState<FullFighter[]>([]);
@@ -79,33 +78,26 @@ export default function Page() {
   const [playerWon, setPlayerWon] = useState(false);
   const [oppName, setOppName] = useState("");
 
-  async function drawPool() {
-    setPoolLoading(true);
+  async function rollDice() {
+    setRolling(true);
     try {
-      const p = await randomFullFighters(10);
-      setPool(p);
+      const r = await randomFullFighters(10);
+      setRoll(r);
     } catch (e) {
       setError(String((e as Error).message));
     } finally {
-      setPoolLoading(false);
+      setRolling(false);
     }
   }
 
   function newRun() {
     setBuild({});
-    setPool([]);
-    setRefreshes(3);
+    setRoll([]);
     setRecord({ w: 0, l: 0 });
     setIdx(0);
     setResult(null);
     setStage("build");
-    void drawPool();
-  }
-
-  function reroll() {
-    if (refreshes <= 0 || poolLoading) return;
-    setRefreshes((r) => r - 1);
-    void drawPool();
+    void rollDice();
   }
 
   function startFight(index: number, p: FighterInput, opps: FullFighter[]) {
@@ -157,7 +149,6 @@ export default function Page() {
   }
 
   const filled = ATTRIBUTE_SLOTS.filter((s) => build[s.attribute_name]).length;
-  const avg = filled ? Math.round(Object.values(build).reduce((a, o) => a + num(o.value), 0) / filled) : 0;
   const ctaLabel = playerWon ? (idx >= TOTAL - 1 ? "🏆 Ver título" : "Próxima luta →") : "Ver resultado";
 
   return (
@@ -192,45 +183,63 @@ export default function Page() {
                       <p className="eyebrow">Passo 1 de 3</p>
                       <h2 className="display mt-1 text-2xl">Monte seu lutador</h2>
                     </div>
+
                     <div className="card p-4">
                       <label htmlFor="fighter-name" className="eyebrow">Nome do seu lutador</label>
                       <input id="fighter-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-lg border border-line bg-ink-3 px-3 py-2 font-bold outline-none transition focus:border-blood" />
-                      <p className="mt-2 text-xs text-mist">
-                        Sorteamos <strong className="text-white">10 feras</strong>. Em cada atributo, escolha de qual delas herdar — pode repetir a mesma fera.
-                        Você tem <strong className="text-gold">{refreshes} re-sorteios</strong>.
-                      </p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-2">
-                      {ATTRIBUTE_SLOTS.map((s, i) => {
+                    {/* DADO + sorteio */}
+                    <div className="card flex flex-col items-center gap-3 p-4">
+                      <Dice rolling={rolling} onRoll={rollDice} />
+                      <p className="text-center text-xs text-mist">
+                        Role o dado, toque num lutador e escolha <strong className="text-white">em qual atributo</strong> encaixá-lo.
+                        Role de novo pra sortear outros 10.
+                      </p>
+                      <div className="grid w-full grid-cols-2 gap-2">
+                        {rolling && roll.length === 0 ? (
+                          <div className="col-span-2 grid place-items-center py-6"><Spinner label="Sorteando…" /></div>
+                        ) : (
+                          roll.map((f, i) => (
+                            <motion.button
+                              key={f.fighter_id + i}
+                              initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              transition={{ delay: Math.min(i * 0.04, 0.4), ease: [0.22, 1, 0.36, 1] }}
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => setSelected(f)}
+                              className="flex items-center gap-2 rounded-xl border border-line bg-white/[0.03] p-2.5 text-left transition hover:border-gold/40 hover:bg-white/[0.06]"
+                            >
+                              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink-3 text-base" aria-hidden>🥊</div>
+                              <div className="min-w-0">
+                                <span className="block truncate text-sm font-bold">{f.name}</span>
+                                <span className="block truncate text-[10px] text-mist">{f.nickname ? `“${f.nickname}”` : "toque para encaixar"}</span>
+                              </div>
+                            </motion.button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* slots montados */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {ATTRIBUTE_SLOTS.map((s) => {
                         const chosen = build[s.attribute_name];
                         return (
-                          <motion.button
+                          <button
                             key={s.attribute_name}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: Math.min(i * 0.03, 0.32), ease: [0.22, 1, 0.36, 1] }}
-                            whileTap={{ scale: 0.985 }}
-                            onClick={() => setActive(s)}
-                            aria-label={chosen ? `${s.label}: ${chosen.name}, valor ${Math.round(num(chosen.value))}. Tocar para trocar.` : `${s.label}: tocar para escolher`}
-                            className={cx("flex items-center gap-3 rounded-xl border p-3 text-left transition", chosen ? "border-blood/50 bg-blood/[0.06]" : "border-line bg-white/[0.02] hover:bg-white/[0.05]")}
+                            onClick={() => chosen && setBuild((b) => { const n = { ...b }; delete n[s.attribute_name]; return n; })}
+                            aria-label={chosen ? `${s.label}: ${chosen.name}. Tocar para limpar.` : `${s.label}: vazio`}
+                            className={cx("flex items-center gap-2 rounded-xl border p-2.5 text-left transition", chosen ? "border-blood/50 bg-blood/[0.06]" : "border-dashed border-line bg-transparent")}
                           >
-                            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-ink-3 font-black text-gold">
+                            <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink-3 font-black text-gold">
                               {chosen ? Math.round(num(chosen.value)) : <span aria-hidden>{s.emoji}</span>}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-[11px] uppercase tracking-wide text-mist">{s.label}</p>
-                              {chosen ? (
-                                <>
-                                  <span className="block truncate font-bold">{chosen.name}</span>
-                                  <div className="mt-1"><StatBar value={num(chosen.value)} /></div>
-                                </>
-                              ) : (
-                                <span className="text-sm text-mist">tocar para escolher</span>
-                              )}
+                              <p className="truncate text-[10px] uppercase tracking-wide text-mist">{s.label}</p>
+                              <span className="block truncate text-xs font-bold">{chosen ? chosen.name : <span className="text-mist">vazio</span>}</span>
                             </div>
-                            <span className="text-mist" aria-hidden>›</span>
-                          </motion.button>
+                          </button>
                         );
                       })}
                     </div>
@@ -283,7 +292,7 @@ export default function Page() {
                     <div className="flex-1">
                       <div className="flex justify-between text-xs text-mist">
                         <span>{filled}/{ATTRIBUTE_SLOTS.length} montados</span>
-                        {avg > 0 && <span>média {avg}</span>}
+                        {filled < ATTRIBUTE_SLOTS.length && <span>vazios viram 50</span>}
                       </div>
                       <div className="mt-1"><StatBar value={(filled / ATTRIBUTE_SLOTS.length) * 100} tone="gold" /></div>
                     </div>
@@ -296,24 +305,17 @@ export default function Page() {
         )}
       </AnimatePresence>
 
-      <SlotSheet
-        slot={active}
-        pool={pool}
-        loading={poolLoading}
-        current={active ? build[active.attribute_name]?.fighter_id : undefined}
-        refreshesLeft={refreshes}
-        onRefresh={reroll}
-        onPick={(f) => {
-          if (active) {
-            const value = num(f.attrs?.[active.attribute_name]);
-            setBuild((b) => ({
-              ...b,
-              [active.attribute_name]: { fighter_id: f.fighter_id, name: f.name, nickname: f.nickname, value },
-            }));
+      <FighterAssignSheet
+        fighter={selected}
+        build={build}
+        onAssign={(attr) => {
+          if (selected) {
+            const value = num(selected.attrs?.[attr]);
+            setBuild((b) => ({ ...b, [attr]: { fighter_id: selected.fighter_id, name: selected.name, nickname: selected.nickname, value } }));
           }
-          setActive(null);
+          setSelected(null);
         }}
-        onClose={() => setActive(null)}
+        onClose={() => setSelected(null)}
       />
     </MotionConfig>
   );
