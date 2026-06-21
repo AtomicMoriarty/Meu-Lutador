@@ -31,7 +31,7 @@ export type SourcedAttr = { value: number; source?: string };
 export type FighterInput = { name: string; attrs: Record<AttrKey, SourcedAttr> };
 
 export type SimEventType =
-  | "round_start" | "round_end" | "strike" | "big_strike" | "kick" | "miss"
+  | "round_start" | "round_end" | "strike" | "big_strike" | "kick" | "miss" | "luck"
   | "knockdown" | "hurt" | "swarm" | "recover" | "saved_by_bell"
   | "takedown" | "takedown_stuffed" | "control" | "ground_strikes" | "sweep" | "scramble"
   | "submission_attempt" | "submission" | "ko" | "tko" | "foul" | "decision";
@@ -104,6 +104,8 @@ const SAVED = ["e o gongo salva no fim do round!", "salvo pelo gongo!"];
 const KO = ["NOCAUTE! apagou as luzes!", "caiu desacordado, acabou!", "um golpe perfeito, KO seco!"];
 const TKO = ["o árbitro intervém — TKO!", "não revida mais e o árbitro para a luta!", "castigo demais, TKO!"];
 const FOUL = ["golpe baixo! tempo para se recuperar", "dedo no olho acidental, ação interrompida", "segurou a grade e perde um ponto", "joelhada ilegal, advertência e ponto"];
+const LUCK_GOOD = ["entrou ligado neste round", "parece em noite inspirada", "achou o ritmo cedo", "a sorte sorri para ele agora"];
+const LUCK_BAD = ["começou morno neste round", "parece um passo atrás", "custou a engrenar", "a noite não está fácil para ele"];
 const pick = <T,>(rng: () => number, a: T[]): T => a[Math.floor(rng() * a.length)]!;
 
 // --------------------------------------------------------------------------- state
@@ -157,6 +159,15 @@ export function simulate(fa: FighterInput, fb: FighterInput, opts: SimOptions = 
     let hurtState: State | null = null; // who is hurt right now
     events.push({ round, clock: "0:00", type: "round_start", detail: `Round ${round}` });
 
+    // luck/misfortune roulette — a subtle per-round swing for each fighter (±6%)
+    const luckA = 1 + (rng() * 2 - 1) * 0.06;
+    const luckB = 1 + (rng() * 2 - 1) * 0.06;
+    const luckOf = (s: State) => (s === A ? luckA : luckB);
+    const swing = Math.abs(luckA - 1) >= Math.abs(luckB - 1) ? { s: A, l: luckA } : { s: B, l: luckB };
+    if (Math.abs(swing.l - 1) > 0.035) {
+      ev(round, 2, "luck", swing.s, { detail: pick(rng, swing.l > 1 ? LUCK_GOOD : LUCK_BAD) });
+    }
+
     const pace = (v(A, "volume") + v(B, "volume")) / 2;
     const nEx = clamp(Math.round(7 + pace / 11), 7, 16);
     const dt = ROUND_SECONDS / nEx;
@@ -176,7 +187,7 @@ export function simulate(fa: FighterInput, fb: FighterInput, opts: SimOptions = 
 
       if (top) {
         const bottom: State = top === A ? B : A;
-        const ctrlDmg = (2 + v(top, "groundControl") * 0.04) * (top.stamina / 100);
+        const ctrlDmg = (2 + v(top, "groundControl") * 0.04) * (top.stamina / 100) * luckOf(top);
         bottom.health -= ctrlDmg;
         top.t.dmg += ctrlDmg; top.t.ctrl += dt;
         bottom.stamina -= 1.5;
@@ -222,7 +233,7 @@ export function simulate(fa: FighterInput, fb: FighterInput, opts: SimOptions = 
 
         // striking — carisma gives a light intimidation edge (±5%)
         const morale = 1 + clamp((v(att, "carisma") - v(def, "carisma")) / 2000, -0.05, 0.05);
-        const landP = clamp(0.4 + (v(att, "volume") - v(def, "fightIq") * 0.3) / 200, 0.18, 0.85) * (0.6 + att.stamina / 250) * morale;
+        const landP = clamp(0.4 + (v(att, "volume") - v(def, "fightIq") * 0.3) / 200, 0.18, 0.85) * (0.6 + att.stamina / 250) * morale * luckOf(att);
         if (rng() >= landP) {
           if (rng() < 0.4) ev(round, elapsed, "miss", att, { target: def.name, detail: pick(rng, MISS) });
           continue;

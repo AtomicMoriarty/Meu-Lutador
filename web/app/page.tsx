@@ -61,14 +61,9 @@ function toFighter(name: string, entries: { attr: string; value: number; source?
 }
 
 function buildOpponents(pool: FullFighter[]): FullFighter[] {
-  const sorted = [...pool].sort((a, b) => num(a.overall) - num(b.overall));
-  if (sorted.length === 0) return [];
-  const out: FullFighter[] = [];
-  for (let i = 0; i < TOTAL; i++) {
-    const idx = Math.min(sorted.length - 1, Math.round((i / (TOTAL - 1)) * (sorted.length - 1)));
-    out.push(sorted[idx]!);
-  }
-  return out;
+  // take the STRONGEST candidates (real challenge), weakest-of-those first.
+  const sorted = [...pool].sort((a, b) => num(b.overall) - num(a.overall));
+  return sorted.slice(0, TOTAL).reverse();
 }
 
 const STANCE_KEYS = Object.keys(STANCES);
@@ -76,13 +71,14 @@ const DISC_KEYS = Object.keys(DISCIPLINES);
 const pickKey = (a: string[]) => a[Math.floor(Math.random() * a.length)]!;
 
 function opponentFighter(o: FullFighter, index: number): FighterInput {
-  const scale = 0.95 + index * 0.05; // tougher toward the main event
+  const scale = 1.05 + index * 0.06; // 1.05 (luta 1) .. 1.47 (main event) — bem mais duro
+  const floor = 40 + index * 3; // sobe o piso: oponentes sem pontos fracos exploráveis
   // opponents also draw a random stance + art (buff/nerf), to be fair to the player
   const oStance = pickKey(STANCE_KEYS);
   const oDisc = pickKey(DISC_KEYS);
   const entries = ATTRIBUTE_SLOTS.map((s) => {
     const base = num(o.attrs?.[s.attribute_name] ?? 50) * scale * modFactor(s.attribute_name, oStance, oDisc);
-    return { attr: s.attribute_name, value: Math.max(15, Math.min(90, Math.round(base))), source: o.name };
+    return { attr: s.attribute_name, value: Math.max(floor, Math.min(96, Math.round(base))), source: o.name };
   });
   return toFighter(o.name || "Desafiante", entries);
 }
@@ -172,7 +168,7 @@ export default function Page() {
       });
       const p = toFighter(name || "Meu Lutador", entries);
       setPlayer(p);
-      const oppoolRaw = await randomFullFighters(24);
+      const oppoolRaw = await randomFullFighters(40);
       const opps = buildOpponents(oppoolRaw);
       if (opps.length < TOTAL) throw new Error("não foi possível montar os adversários");
       setOpponents(opps);
