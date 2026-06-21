@@ -71,13 +71,19 @@ function buildOpponents(pool: FullFighter[]): FullFighter[] {
   return out;
 }
 
+const STANCE_KEYS = Object.keys(STANCES);
+const DISC_KEYS = Object.keys(DISCIPLINES);
+const pickKey = (a: string[]) => a[Math.floor(Math.random() * a.length)]!;
+
 function opponentFighter(o: FullFighter, index: number): FighterInput {
   const scale = 0.95 + index * 0.05; // tougher toward the main event
-  const entries = ATTRIBUTE_SLOTS.map((s) => ({
-    attr: s.attribute_name,
-    value: Math.max(15, Math.min(90, Math.round(num(o.attrs?.[s.attribute_name] ?? 50) * scale))),
-    source: o.name,
-  }));
+  // opponents also draw a random stance + art (buff/nerf), to be fair to the player
+  const oStance = pickKey(STANCE_KEYS);
+  const oDisc = pickKey(DISC_KEYS);
+  const entries = ATTRIBUTE_SLOTS.map((s) => {
+    const base = num(o.attrs?.[s.attribute_name] ?? 50) * scale * modFactor(s.attribute_name, oStance, oDisc);
+    return { attr: s.attribute_name, value: Math.max(15, Math.min(90, Math.round(base))), source: o.name };
+  });
   return toFighter(o.name || "Desafiante", entries);
 }
 
@@ -268,8 +274,8 @@ export default function Page() {
                         for (const a of [...ups]) if (downs.has(a)) { ups.delete(a); downs.delete(a); }
                         return (
                           <div className="flex flex-col gap-1.5">
-                            <p className="text-emerald-300">▲ +10% {[...ups].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
-                            <p className="text-blood-2">▼ −10% {[...downs].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
+                            <p className="text-emerald-300">▲ Melhora: {[...ups].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
+                            <p className="text-blood-2">▼ Piora: {[...downs].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
                           </div>
                         );
                       })()}
@@ -345,8 +351,8 @@ export default function Page() {
                             aria-label={chosen ? `${s.label}: ${chosen.name}. Tocar para limpar.` : `${s.label}: vazio`}
                             className={cx("flex items-center gap-2 rounded-xl border p-2.5 text-left transition", chosen ? "border-blood/50 bg-blood/[0.06]" : "border-dashed border-line bg-transparent")}
                           >
-                            <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink-3 font-black text-gold">
-                              {chosen ? Math.round(num(chosen.value)) : <span aria-hidden>{s.emoji}</span>}
+                            <div className={cx("grid size-9 shrink-0 place-items-center rounded-lg text-base", chosen ? "bg-blood/20" : "bg-ink-3")}>
+                              <span aria-hidden>{s.emoji}</span>
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[10px] uppercase tracking-wide text-mist">{s.label}</p>

@@ -1,11 +1,10 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
 import { ATTRIBUTE_SLOTS, type Build, type FullFighter } from "@/lib/types";
-import { Button, StatBar, cx } from "./ui";
+import { Button, cx } from "./ui";
 
-const num = (x: unknown) => Number(x) || 0;
-
-/** Pick which attribute slot to assign the chosen fighter to. */
+/** Pick which attribute slot to assign the chosen fighter to. Values are hidden —
+ *  the player chooses by the fighter's reputation, not by numbers. */
 export function FighterAssignSheet({
   fighter,
   build,
@@ -45,7 +44,6 @@ export function FighterAssignSheet({
 
             <div className="grid flex-1 grid-cols-1 gap-2 overflow-y-auto p-3 sm:grid-cols-2">
               {ATTRIBUTE_SLOTS.map((s) => {
-                const val = Math.round(num(fighter.attrs?.[s.attribute_name]));
                 const taken = build[s.attribute_name];
                 return (
                   <motion.button
@@ -57,14 +55,12 @@ export function FighterAssignSheet({
                       taken ? "border-gold/40 bg-gold/[0.06]" : "border-line bg-white/[0.03] hover:bg-white/[0.06]",
                     )}
                   >
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-ink-3 font-black text-gold">{val}</div>
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-ink-3 text-lg" aria-hidden>{s.emoji}</div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold uppercase tracking-wide text-mist">
-                        {s.emoji} {s.label}
-                      </p>
-                      <div className="mt-1"><StatBar value={val} /></div>
-                      {taken && <p className="mt-0.5 truncate text-[10px] text-gold/80">ocupado: {taken.name} ({Math.round(num(taken.value))})</p>}
+                      <p className="truncate text-sm font-bold">{s.label}</p>
+                      {taken && <p className="truncate text-[11px] text-gold/80">ocupado: {taken.name}</p>}
                     </div>
+                    {taken && <span className="text-gold" aria-hidden>↺</span>}
                   </motion.button>
                 );
               })}
