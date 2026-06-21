@@ -75,7 +75,7 @@ function opponentFighter(o: FullFighter, index: number): FighterInput {
   const scale = 0.95 + index * 0.05; // tougher toward the main event
   const entries = ATTRIBUTE_SLOTS.map((s) => ({
     attr: s.attribute_name,
-    value: Math.max(1, Math.min(99, Math.round(num(o.attrs?.[s.attribute_name] ?? 50) * scale))),
+    value: Math.max(15, Math.min(90, Math.round(num(o.attrs?.[s.attribute_name] ?? 50) * scale))),
     source: o.name,
   }));
   return toFighter(o.name || "Desafiante", entries);
@@ -161,7 +161,7 @@ export default function Page() {
       const entries = ATTRIBUTE_SLOTS.map((s) => {
         const o = build[s.attribute_name];
         const base = o ? num(o.value) : 50;
-        const value = Math.max(1, Math.min(99, Math.round(base * modFactor(s.attribute_name, stance, discipline))));
+        const value = Math.max(12, Math.min(95, Math.round(base * modFactor(s.attribute_name, stance, discipline))));
         return { attr: s.attribute_name, value, source: o?.name };
       });
       const p = toFighter(name || "Meu Lutador", entries);
