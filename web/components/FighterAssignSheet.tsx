@@ -37,10 +37,15 @@ export function FighterAssignSheet({
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blood/50 to-transparent" />
 
             <div className="flex items-center justify-between border-b border-line p-5">
-              <div className="min-w-0">
-                <p className="eyebrow text-blood-2">Encaixar em qual atributo?</p>
-                <h3 className="mt-1 truncate text-xl font-extrabold text-glow">{fighter.name}</h3>
-                {fighter.nickname && <p className="truncate text-xs text-mist">"{fighter.nickname}"</p>}
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink-3 ring-1 ring-line">
+                  <span className="text-lg font-black tabular text-gold">{fighter.overall || "?"}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="eyebrow text-blood-2">Encaixar em qual atributo?</p>
+                  <h3 className="mt-1 truncate text-xl font-extrabold text-glow">{fighter.name}</h3>
+                  {fighter.nickname && <p className="truncate text-xs text-mist">"{fighter.nickname}"</p>}
+                </div>
               </div>
               <button onClick={onClose} className="grid size-9 place-items-center rounded-lg text-mist transition hover:bg-white/10 hover:text-white" aria-label="Fechar">
                 <X className="size-5" />
@@ -63,12 +68,14 @@ export function FighterAssignSheet({
                       taken ? "border-gold/40 bg-gold/[0.06]" : "border-line bg-smoke hover:bg-smoke-2 hover:border-blood/30",
                     )}
                   >
-                    <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-ink-3" aria-hidden><SlotIcon name={s.icon} className="size-5 text-mist-2" /></div>
+                    <div className={cx("grid size-11 shrink-0 place-items-center rounded-lg", taken ? "bg-gold/10" : "bg-ink-3")} aria-hidden>
+                      <SlotIcon name={s.icon} className={cx("size-5", taken ? "text-gold" : "text-mist-2")} />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{s.label}</p>
                       {taken && <p className="truncate text-[11px] text-gold/80">ocupado: {taken.name}</p>}
                     </div>
-                    {taken && <span className="text-gold" aria-hidden>↺</span>}
+                    {taken && <span className="text-[10px] font-bold text-gold/60" aria-hidden>trocar</span>}
                   </motion.button>
                 );
               })}

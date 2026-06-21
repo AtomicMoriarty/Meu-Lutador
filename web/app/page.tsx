@@ -22,7 +22,7 @@ import { BeltBadge } from "@/components/ui/belt-badge";
 import { Toast } from "@/components/ui/toast";
 import { Landing } from "@/components/Landing";
 import {
-  ArrowDownUp, Dices, Flame, Gauge, Orbit, RefreshCw,
+  ArrowDownUp, Check, Dices, Flame, Gauge, Orbit, RefreshCw,
   ShieldCheck, Skull, Swords, Target, Trophy, Wind,
   type LucideIcon,
 } from "lucide-react";
@@ -243,7 +243,7 @@ export default function Page() {
                       <div className="grid grid-cols-3 gap-2.5">
                         {Object.entries(STANCES).map(([k, vv]) => (
                           <button key={k} onClick={() => setStance(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", stance === k ? "border-blood bg-blood/10 shadow-[0_0_20px_-4px_rgba(225,29,42,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
-                            <div className="flex justify-center" aria-hidden><vv.icon className="size-6 text-mist-2" strokeWidth={1.8} /></div>
+                            <div className="flex justify-center" aria-hidden><vv.icon className={cx("size-6 transition-colors", stance === k ? "text-blood-2" : "text-mist-2")} strokeWidth={1.8} /></div>
                             <div className="mt-1.5 text-xs font-bold">{vv.label}</div>
                           </button>
                         ))}
@@ -255,7 +255,7 @@ export default function Page() {
                       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
                         {Object.entries(DISCIPLINES).map(([k, vv]) => (
                           <button key={k} onClick={() => setDiscipline(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", discipline === k ? "border-gold bg-gold/10 shadow-[0_0_20px_-4px_rgba(245,181,63,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
-                            <div className="flex justify-center" aria-hidden><vv.icon className="size-6 text-mist-2" strokeWidth={1.8} /></div>
+                            <div className="flex justify-center" aria-hidden><vv.icon className={cx("size-6 transition-colors", discipline === k ? "text-gold" : "text-mist-2")} strokeWidth={1.8} /></div>
                             <div className="mt-1.5 text-[11px] font-bold leading-tight">{vv.label}</div>
                           </button>
                         ))}
@@ -338,7 +338,9 @@ export default function Page() {
                               onClick={() => setSelected(f)}
                               className="flex items-center gap-2.5 rounded-xl border border-line bg-smoke p-3 text-left transition-all hover:border-gold/40 hover:bg-smoke-2 hover:shadow-[0_0_16px_-4px_rgba(245,181,63,0.2)]"
                             >
-                              <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-ink-3" aria-hidden><Swords className="size-5 text-mist-2" strokeWidth={1.5} /></div>
+                              <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-ink-3">
+                                <span className="text-sm font-black tabular text-gold">{f.overall || "?"}</span>
+                              </div>
                               <div className="min-w-0">
                                 <span className="block truncate text-sm font-bold">{f.name}</span>
                                 <span className="block truncate text-[10px] text-mist">{f.nickname ? `"${f.nickname}"` : "toque para encaixar"}</span>
@@ -419,31 +421,82 @@ export default function Page() {
 
                 {stage === "fight" && result && player && (
                   <motion.section key={`fight-${idx}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={stageTransition} className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className={cx("rounded-full px-3 py-1.5 font-bold", idx >= 6 ? "bg-gold/15 text-gold shadow-[0_0_12px_-2px_rgba(245,181,63,0.3)]" : "bg-blood/12 text-blood-2")}>{fightLabel(idx)} · {roundsFor(idx)} rounds</span>
-                      <span className="text-mist">Cartel {record.w}–{record.l} · {idx + 1}/{TOTAL}</span>
+                    {/* Career Ladder */}
+                    <div className="card p-3">
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: TOTAL }).map((_, i) => (
+                          <div key={i} className="flex flex-1 items-center">
+                            <div className={cx(
+                              "grid size-7 shrink-0 place-items-center rounded-full text-[10px] font-bold transition-all",
+                              i < idx && "bg-blood/15 text-blood-2 ring-1 ring-blood/30",
+                              i === idx && "step-glow bg-gold/15 text-gold ring-1 ring-gold/40",
+                              i > idx && "bg-ink-3/60 text-mist/30 ring-1 ring-line/50",
+                            )}>
+                              {i < idx ? <Check className="size-3.5" strokeWidth={2.5} /> : i + 1}
+                            </div>
+                            {i < TOTAL - 1 && <div className={cx("mx-0.5 h-px flex-1", i < idx ? "bg-blood/40" : "bg-line/40")} />}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-2.5 flex items-center justify-between text-xs">
+                        <span className={cx("font-bold", idx >= 6 ? "text-gold" : "text-blood-2")}>{fightLabel(idx)} · {roundsFor(idx)}R</span>
+                        <span className="tabular text-mist">{record.w}W–{record.l}L</span>
+                      </div>
                     </div>
                     <FightPlayback result={result} aName={player.name} bName={oppName} playerWon={playerWon} ctaLabel={ctaLabel} onContinue={afterFight} speed={speed} onSpeed={setSpeed} auto={auto} onAuto={setAuto} />
                   </motion.section>
                 )}
 
                 {stage === "gameover" && (
-                  <motion.section key="over" initial={{ opacity: 0, scale: 0.92, filter: "blur(6px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ type: "spring", damping: 18, stiffness: 220 }} className="card p-10 text-center">
-                    <div className="mx-auto grid size-20 place-items-center rounded-full bg-blood/10"><Skull className="size-10 text-blood-2" strokeWidth={1.5} /></div>
-                    <h2 className="display mt-4 text-3xl text-glow">Fim da campanha</h2>
-                    <p className="mt-2 text-mist">Você caiu na {fightLabel(idx)}. Cartel final: <strong className="text-white">{record.w} vitórias</strong>.</p>
-                    <div className="mt-8 flex justify-center"><MagneticCta className="w-full" onClick={newRun}>Tentar de novo</MagneticCta></div>
+                  <motion.section key="over" initial={{ opacity: 0, scale: 0.92, filter: "blur(6px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ type: "spring", damping: 18, stiffness: 220 }} className="card overflow-hidden text-center">
+                    <div className="bg-gradient-to-b from-blood/15 to-transparent px-6 py-8">
+                      <div className="mx-auto grid size-20 place-items-center rounded-full bg-blood/10"><Skull className="size-10 text-blood-2" strokeWidth={1.5} /></div>
+                      <h2 className="display mt-4 text-3xl text-glow">Fim da campanha</h2>
+                      <p className="mt-2 text-sm text-mist">
+                        Perdeu para <strong className="text-white">{oppName}</strong> na {fightLabel(idx)}.
+                      </p>
+                      <p className="mt-1 text-lg font-black tabular text-white">{record.w}W–{record.l}L</p>
+                    </div>
+
+                    {record.w > 0 && (
+                      <div className="border-t border-line px-5 py-4">
+                        <p className="eyebrow mb-2.5 text-center">Vitórias ({record.w})</p>
+                        <div className="flex flex-wrap justify-center gap-1.5">
+                          {opponents.slice(0, record.w).map((o, i) => (
+                            <span key={i} className="rounded-full bg-blood/8 px-3 py-1 text-[11px] font-bold text-blood-2">{o.name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="border-t border-line p-5">
+                      <MagneticCta className="w-full" onClick={newRun}>Tentar de novo</MagneticCta>
+                    </div>
                   </motion.section>
                 )}
 
                 {stage === "champion" && (
                   <motion.section key="champ" initial={{ opacity: 0, scale: 0.88, filter: "blur(8px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ type: "spring", damping: 14 }} className="card-hairline overflow-hidden text-center">
-                    <div className="bg-gradient-to-b from-gold/25 to-transparent px-6 py-10">
+                    <div className="gold-burst relative bg-gradient-to-b from-gold/25 to-transparent px-6 py-10">
                       <BeltBadge className="mx-auto mb-4" size={96} />
                       <h2 className="punch-in display gold-glow text-4xl">CAMPEÃO!</h2>
-                      <p className="mt-3 text-white/80"><strong>{name}</strong> venceu as 8 lutas e conquistou o cinturão. Invicto: 8–0.</p>
+                      <p className="mt-1 text-2xl font-black tabular text-gold">8–0</p>
+                      <p className="mt-2 text-sm text-white/70"><strong className="text-white">{name}</strong> conquistou o cinturão invicto.</p>
                     </div>
-                    <div className="p-5"><MagneticCta tone="gold" className="w-full" onClick={newRun}>Jogar de novo</MagneticCta></div>
+
+                    <div className="border-t border-line px-5 py-4">
+                      <p className="eyebrow mb-3 text-center text-gold/80">Adversários derrotados</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {opponents.map((o, i) => (
+                          <div key={i} className="flex items-center gap-2 rounded-lg bg-gold/[0.04] px-3 py-2 text-left">
+                            <span className="text-[10px] font-black tabular text-gold/60">{i + 1}</span>
+                            <span className="truncate text-xs font-bold text-mist-2">{o.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="border-t border-line p-5"><MagneticCta tone="gold" className="w-full" onClick={newRun}>Jogar de novo</MagneticCta></div>
                   </motion.section>
                 )}
               </AnimatePresence>
