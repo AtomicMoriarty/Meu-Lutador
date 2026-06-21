@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { Dices } from "lucide-react";
 
 export function Dice({ rolling, disabled, onRoll }: { rolling: boolean; disabled?: boolean; onRoll: () => void }) {
   const [spins, setSpins] = useState(0);
@@ -19,11 +20,11 @@ export function Dice({ rolling, disabled, onRoll }: { rolling: boolean; disabled
     >
       <span className="sheen-on-idle pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden />
       <motion.span
-        className="text-4xl"
+        className="flex items-center justify-center"
         animate={{ rotate: spins * 720 }}
         transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
       >
-        🎲
+        <Dices className="size-9 text-gold" strokeWidth={1.5} />
       </motion.span>
     </motion.button>
   );

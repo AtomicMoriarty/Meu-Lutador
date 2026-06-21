@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { ATTRIBUTE_SLOTS, type Build, type FullFighter } from "@/lib/types";
+import { SlotIcon } from "./ui/slot-icon";
 import { cx } from "./ui";
 
 export function FighterAssignSheet({
@@ -62,7 +63,7 @@ export function FighterAssignSheet({
                       taken ? "border-gold/40 bg-gold/[0.06]" : "border-line bg-smoke hover:bg-smoke-2 hover:border-blood/30",
                     )}
                   >
-                    <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-ink-3 text-lg" aria-hidden>{s.emoji}</div>
+                    <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-ink-3" aria-hidden><SlotIcon name={s.icon} className="size-5 text-mist-2" /></div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{s.label}</p>
                       {taken && <p className="truncate text-[11px] text-gold/80">ocupado: {taken.name}</p>}

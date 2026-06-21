@@ -21,23 +21,28 @@ import { MagneticCta } from "@/components/ui/magnetic-cta";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { Toast } from "@/components/ui/toast";
 import { Landing } from "@/components/Landing";
-import { RefreshCw } from "lucide-react";
+import {
+  ArrowDownUp, Dices, Flame, Gauge, Orbit, RefreshCw,
+  ShieldCheck, Skull, Swords, Target, Trophy, Wind,
+  type LucideIcon,
+} from "lucide-react";
+import { SlotIcon } from "@/components/ui/slot-icon";
 
 type Stage = "intro" | "create" | "build" | "ready" | "loading" | "fight" | "gameover" | "champion";
 const TOTAL = 8;
 const num = (x: unknown) => Number(x) || 0;
 
-const STANCES: Record<string, { label: string; emoji: string; buff: string[]; nerf: string[] }> = {
-  defensivo: { label: "Defensivo", emoji: "🛡️", buff: ["queixo", "defesa_queda", "recuperacao"], nerf: ["poder_de_mao", "volume_velocidade"] },
-  equilibrado: { label: "Equilibrado", emoji: "⚖️", buff: [], nerf: [] },
-  agressivo: { label: "Agressivo", emoji: "🔥", buff: ["poder_de_mao", "volume_velocidade"], nerf: ["queixo", "defesa_queda"] },
+const STANCES: Record<string, { label: string; icon: LucideIcon; buff: string[]; nerf: string[] }> = {
+  defensivo: { label: "Defensivo", icon: ShieldCheck, buff: ["queixo", "defesa_queda", "recuperacao"], nerf: ["poder_de_mao", "volume_velocidade"] },
+  equilibrado: { label: "Equilibrado", icon: Gauge, buff: [], nerf: [] },
+  agressivo: { label: "Agressivo", icon: Flame, buff: ["poder_de_mao", "volume_velocidade"], nerf: ["queixo", "defesa_queda"] },
 };
-const DISCIPLINES: Record<string, { label: string; emoji: string; buff: string[]; nerf: string[] }> = {
-  jiu_jitsu: { label: "Jiu-Jitsu", emoji: "🥋", buff: ["finalizacao", "controle_chao"], nerf: ["poder_de_mao"] },
-  boxe: { label: "Boxe", emoji: "🥊", buff: ["poder_de_mao", "volume_velocidade"], nerf: ["controle_chao"] },
-  wrestling: { label: "Wrestling", emoji: "🤼", buff: ["wrestling_quedas", "controle_chao"], nerf: ["chute_perna"] },
-  muay_thai: { label: "Muay Thai", emoji: "🦵", buff: ["chute_perna", "poder_de_mao"], nerf: ["wrestling_quedas"] },
-  karate: { label: "Karatê", emoji: "🐉", buff: ["chute_perna", "volume_velocidade"], nerf: ["finalizacao"] },
+const DISCIPLINES: Record<string, { label: string; icon: LucideIcon; buff: string[]; nerf: string[] }> = {
+  jiu_jitsu: { label: "Jiu-Jitsu", icon: Orbit, buff: ["finalizacao", "controle_chao"], nerf: ["poder_de_mao"] },
+  boxe: { label: "Boxe", icon: Target, buff: ["poder_de_mao", "volume_velocidade"], nerf: ["controle_chao"] },
+  wrestling: { label: "Wrestling", icon: ArrowDownUp, buff: ["wrestling_quedas", "controle_chao"], nerf: ["chute_perna"] },
+  muay_thai: { label: "Muay Thai", icon: Swords, buff: ["chute_perna", "poder_de_mao"], nerf: ["wrestling_quedas"] },
+  karate: { label: "Karatê", icon: Wind, buff: ["chute_perna", "volume_velocidade"], nerf: ["finalizacao"] },
 };
 const LABEL_BY_ATTR = Object.fromEntries(ATTRIBUTE_SLOTS.map((s) => [s.attribute_name, s.label]));
 
@@ -193,7 +198,7 @@ export default function Page() {
   }
 
   const filled = ATTRIBUTE_SLOTS.filter((s) => build[s.attribute_name]).length;
-  const ctaLabel = playerWon ? (idx >= TOTAL - 1 ? "🏆 Ver título" : "Próxima luta →") : "Ver resultado";
+  const ctaLabel = playerWon ? (idx >= TOTAL - 1 ? "Ver título" : "Próxima luta →") : "Ver resultado";
 
   return (
     <MotionConfig reducedMotion="user">
@@ -238,7 +243,7 @@ export default function Page() {
                       <div className="grid grid-cols-3 gap-2.5">
                         {Object.entries(STANCES).map(([k, vv]) => (
                           <button key={k} onClick={() => setStance(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", stance === k ? "border-blood bg-blood/10 shadow-[0_0_20px_-4px_rgba(225,29,42,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
-                            <div className="text-2xl" aria-hidden>{vv.emoji}</div>
+                            <div className="flex justify-center" aria-hidden><vv.icon className="size-6 text-mist-2" strokeWidth={1.8} /></div>
                             <div className="mt-1.5 text-xs font-bold">{vv.label}</div>
                           </button>
                         ))}
@@ -250,7 +255,7 @@ export default function Page() {
                       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
                         {Object.entries(DISCIPLINES).map(([k, vv]) => (
                           <button key={k} onClick={() => setDiscipline(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", discipline === k ? "border-gold bg-gold/10 shadow-[0_0_20px_-4px_rgba(245,181,63,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
-                            <div className="text-2xl" aria-hidden>{vv.emoji}</div>
+                            <div className="flex justify-center" aria-hidden><vv.icon className="size-6 text-mist-2" strokeWidth={1.8} /></div>
                             <div className="mt-1.5 text-[11px] font-bold leading-tight">{vv.label}</div>
                           </button>
                         ))}
@@ -288,7 +293,7 @@ export default function Page() {
 
                     <div className="card flex items-center justify-between gap-2 p-3.5 text-sm">
                       <span className="truncate font-bold text-white">{name || "Meu Lutador"}</span>
-                      <span className="shrink-0 text-xs text-mist">{STANCES[stance]?.emoji} {STANCES[stance]?.label} · {DISCIPLINES[discipline]?.emoji} {DISCIPLINES[discipline]?.label}</span>
+                      <span className="shrink-0 text-xs text-mist">{STANCES[stance]?.label} · {DISCIPLINES[discipline]?.label}</span>
                     </div>
 
                     {/* Dado + sorteio */}
@@ -318,7 +323,7 @@ export default function Page() {
                         ) : batch.length === 0 ? (
                           <div className="col-span-2 flex flex-col items-center gap-3 py-8">
                             <div className="grid size-16 place-items-center rounded-2xl border border-dashed border-line-2">
-                              <span className="text-3xl opacity-30">🎲</span>
+                              <Dices className="size-8 text-mist/30" strokeWidth={1.5} />
                             </div>
                             <p className="text-center text-sm text-mist">Role o dado para sortear 10 lutadores</p>
                           </div>
@@ -333,7 +338,7 @@ export default function Page() {
                               onClick={() => setSelected(f)}
                               className="flex items-center gap-2.5 rounded-xl border border-line bg-smoke p-3 text-left transition-all hover:border-gold/40 hover:bg-smoke-2 hover:shadow-[0_0_16px_-4px_rgba(245,181,63,0.2)]"
                             >
-                              <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-ink-3 text-lg" aria-hidden>🥊</div>
+                              <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-ink-3" aria-hidden><Swords className="size-5 text-mist-2" strokeWidth={1.5} /></div>
                               <div className="min-w-0">
                                 <span className="block truncate text-sm font-bold">{f.name}</span>
                                 <span className="block truncate text-[10px] text-mist">{f.nickname ? `"${f.nickname}"` : "toque para encaixar"}</span>
@@ -358,8 +363,8 @@ export default function Page() {
                             aria-label={chosen ? `${s.label}: ${chosen.name}. Tocar para limpar.` : `${s.label}: vazio`}
                             className={cx("flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all", chosen ? "border-blood/40 bg-blood/[0.06] shadow-[0_0_16px_-6px_rgba(225,29,42,0.2)]" : "border-dashed border-line bg-transparent")}
                           >
-                            <div className={cx("grid size-10 shrink-0 place-items-center rounded-lg text-lg", chosen ? "bg-blood/15" : "bg-ink-3")}>
-                              <span aria-hidden>{s.emoji}</span>
+                            <div className={cx("grid size-10 shrink-0 place-items-center rounded-lg", chosen ? "bg-blood/15" : "bg-ink-3")}>
+                              <SlotIcon name={s.icon} className={cx("size-5", chosen ? "text-blood-2" : "text-mist-2")} />
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[10px] uppercase tracking-wide text-mist">{s.label}</p>
@@ -405,7 +410,7 @@ export default function Page() {
                 {stage === "loading" && (
                   <motion.section key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={stageTransition}>
                     <div className="card grid place-items-center gap-5 p-12">
-                      <div className="pulse-ring grid size-20 place-items-center rounded-full bg-blood/80 text-3xl shadow-[0_0_40px_-8px_rgba(225,29,42,0.6)]">🥊</div>
+                      <div className="pulse-ring grid size-20 place-items-center rounded-full bg-blood/80 shadow-[0_0_40px_-8px_rgba(225,29,42,0.6)]"><Swords className="size-9 text-white" strokeWidth={1.8} /></div>
                       <Spinner label="Montando o card…" />
                       <p className="text-xs text-mist/60">Buscando adversários dignos</p>
                     </div>
@@ -424,7 +429,7 @@ export default function Page() {
 
                 {stage === "gameover" && (
                   <motion.section key="over" initial={{ opacity: 0, scale: 0.92, filter: "blur(6px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ type: "spring", damping: 18, stiffness: 220 }} className="card p-10 text-center">
-                    <div className="mx-auto grid size-20 place-items-center rounded-full bg-blood/10 text-5xl">💀</div>
+                    <div className="mx-auto grid size-20 place-items-center rounded-full bg-blood/10"><Skull className="size-10 text-blood-2" strokeWidth={1.5} /></div>
                     <h2 className="display mt-4 text-3xl text-glow">Fim da campanha</h2>
                     <p className="mt-2 text-mist">Você caiu na {fightLabel(idx)}. Cartel final: <strong className="text-white">{record.w} vitórias</strong>.</p>
                     <div className="mt-8 flex justify-center"><MagneticCta className="w-full" onClick={newRun}>Tentar de novo</MagneticCta></div>

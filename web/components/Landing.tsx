@@ -243,7 +243,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
           {LEGENDS.map((nm) => (
             <span key={nm} className="mx-3 inline-flex items-center gap-3 text-lg font-extrabold tracking-tight text-mist-2 sm:text-xl">
               {nm}
-              <span className="text-blood/50" aria-hidden>✦</span>
+              <svg className="size-2 shrink-0 fill-blood/50" viewBox="0 0 8 8" aria-hidden><path d="M4 0l1.5 2.5L8 4l-2.5 1.5L4 8l-1.5-2.5L0 4l2.5-1.5z"/></svg>
             </span>
           ))}
         </Marquee>
@@ -251,7 +251,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
           {LEGENDS.slice().reverse().map((nm) => (
             <span key={nm} className="mx-3 inline-flex items-center gap-3 text-base font-bold text-mist/70 sm:text-lg">
               {nm}
-              <span className="text-gold/40" aria-hidden>✦</span>
+              <svg className="size-2 shrink-0 fill-gold/40" viewBox="0 0 8 8" aria-hidden><path d="M4 0l1.5 2.5L8 4l-2.5 1.5L4 8l-1.5-2.5L0 4l2.5-1.5z"/></svg>
             </span>
           ))}
         </Marquee>

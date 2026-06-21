@@ -1,6 +1,12 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowDown, ArrowUpRight, Ban, Bell, CircleDot, ClipboardList, Clock,
+  Crosshair, Flame, Flag, Hammer, HeartPulse, Link, Lock,
+  RefreshCw, Shield, Shuffle, Skull, Target, Wind, Zap,
+  type LucideIcon,
+} from "lucide-react";
 import type { SimEvent, SimResult } from "@/lib/engine";
 import { HoverButton } from "./ui/hover-button";
 import { cx } from "./ui";
@@ -13,12 +19,12 @@ const DELAYS: Record<Speed, { base: number; big: number }> = {
 };
 const SPEED_LABEL: Record<Speed, string> = { normal: "Normal", rapida: "Rápida", ultra: "Ultra" };
 
-const ICON: Record<string, string> = {
-  round_start: "🔔", round_end: "⏱️", strike: "👊", big_strike: "💥", kick: "🦵",
-  miss: "💨", knockdown: "🌀", hurt: "😵", swarm: "🔥", recover: "🛟", saved_by_bell: "🛎️",
-  takedown: "🤼", takedown_stuffed: "🧱", control: "🔒", ground_strikes: "🔨", sweep: "🔄",
-  scramble: "🌪️", submission_attempt: "🧶", submission: "🏳️", ko: "💀", tko: "💀",
-  foul: "🚫", decision: "📋",
+const ICON: Record<string, LucideIcon> = {
+  round_start: Bell, round_end: Clock, strike: Crosshair, big_strike: Zap, kick: ArrowUpRight,
+  miss: Wind, knockdown: Target, hurt: Shield, swarm: Flame, recover: HeartPulse, saved_by_bell: Bell,
+  takedown: ArrowDown, takedown_stuffed: Shield, control: Lock, ground_strikes: Hammer, sweep: RefreshCw,
+  scramble: Shuffle, submission_attempt: Link, submission: Flag, ko: Skull, tko: Skull,
+  foul: Ban, decision: ClipboardList,
 };
 const BIG = new Set(["knockdown", "hurt", "ko", "tko", "submission", "big_strike", "foul"]);
 const ATTR_PT: Record<string, string> = {
@@ -26,13 +32,19 @@ const ATTR_PT: Record<string, string> = {
   groundControl: "controle", submission: "finalização", recovery: "recuperação", volume: "volume",
 };
 
+function EventIcon({ type, big }: { type: string; big: boolean }) {
+  const Icon = ICON[type];
+  if (!Icon) return <CircleDot className="size-3.5 text-mist/50" strokeWidth={1.5} />;
+  return <Icon className={big ? "size-5 text-blood-2" : "size-4 text-mist-2"} strokeWidth={big ? 2 : 1.5} />;
+}
+
 function Row({ e, aName }: { e: SimEvent; aName: string }) {
   const mine = e.actor === aName;
   const big = BIG.has(e.type);
   return (
     <motion.div initial={{ opacity: 0, x: mine ? -14 : 14 }} animate={{ opacity: 1, x: 0 }} transition={{ type: "spring", damping: 24, stiffness: 320 }} className="flex items-start gap-3 py-1.5">
       <span className="mt-0.5 w-10 shrink-0 text-right font-mono text-xs text-mist">{e.clock}</span>
-      <span className={big ? "text-xl" : "text-base"}>{ICON[e.type] ?? "•"}</span>
+      <span className="mt-0.5 flex shrink-0 items-center justify-center" aria-hidden><EventIcon type={e.type} big={big} /></span>
       <div className="min-w-0 flex-1">
         <p className={big ? "font-extrabold text-glow" : "text-sm"}>
           {e.actor && <span className={mine ? "text-blood-2" : "text-white"}>{e.actor} </span>}
