@@ -1,10 +1,9 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
 import { ATTRIBUTE_SLOTS, type Build, type FullFighter } from "@/lib/types";
-import { Button, cx } from "./ui";
+import { cx } from "./ui";
 
-/** Pick which attribute slot to assign the chosen fighter to. Values are hidden —
- *  the player chooses by the fighter's reputation, not by numbers. */
 export function FighterAssignSheet({
   fighter,
   build,
@@ -25,37 +24,45 @@ export function FighterAssignSheet({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
           <motion.div
-            className="card relative z-10 flex max-h-[88dvh] w-full max-w-lg flex-col overflow-hidden"
-            initial={{ y: 60, opacity: 0, scale: 0.98 }}
+            className="relative z-10 flex max-h-[88dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-line bg-ink-2/95 backdrop-blur-xl sm:rounded-2xl"
+            initial={{ y: 60, opacity: 0, scale: 0.97 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 60, opacity: 0 }}
             transition={{ type: "spring", damping: 26, stiffness: 280 }}
           >
-            <div className="flex items-center justify-between border-b border-line p-4">
+            {/* Top accent */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blood/50 to-transparent" />
+
+            <div className="flex items-center justify-between border-b border-line p-5">
               <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-widest text-mist">Encaixar em qual atributo?</p>
-                <h3 className="truncate text-lg font-extrabold text-glow">{fighter.name}</h3>
-                {fighter.nickname && <p className="truncate text-xs text-mist">“{fighter.nickname}”</p>}
+                <p className="eyebrow text-blood-2">Encaixar em qual atributo?</p>
+                <h3 className="mt-1 truncate text-xl font-extrabold text-glow">{fighter.name}</h3>
+                {fighter.nickname && <p className="truncate text-xs text-mist">"{fighter.nickname}"</p>}
               </div>
-              <button onClick={onClose} className="rounded-lg px-3 py-1 text-mist hover:bg-white/10" aria-label="Fechar">✕</button>
+              <button onClick={onClose} className="grid size-9 place-items-center rounded-lg text-mist transition hover:bg-white/10 hover:text-white" aria-label="Fechar">
+                <X className="size-5" />
+              </button>
             </div>
 
-            <div className="grid flex-1 grid-cols-1 gap-2 overflow-y-auto p-3 sm:grid-cols-2">
-              {ATTRIBUTE_SLOTS.map((s) => {
+            <div className="grid flex-1 grid-cols-1 gap-2.5 overflow-y-auto p-4 sm:grid-cols-2">
+              {ATTRIBUTE_SLOTS.map((s, i) => {
                 const taken = build[s.attribute_name];
                 return (
                   <motion.button
                     key={s.attribute_name}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => onAssign(s.attribute_name)}
                     className={cx(
-                      "flex items-center gap-3 rounded-xl border p-3 text-left transition",
-                      taken ? "border-gold/40 bg-gold/[0.06]" : "border-line bg-white/[0.03] hover:bg-white/[0.06]",
+                      "flex items-center gap-3 rounded-xl border p-3.5 text-left transition-all",
+                      taken ? "border-gold/40 bg-gold/[0.06]" : "border-line bg-smoke hover:bg-smoke-2 hover:border-blood/30",
                     )}
                   >
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-ink-3 text-lg" aria-hidden>{s.emoji}</div>
+                    <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-ink-3 text-lg" aria-hidden>{s.emoji}</div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{s.label}</p>
                       {taken && <p className="truncate text-[11px] text-gold/80">ocupado: {taken.name}</p>}
@@ -66,8 +73,13 @@ export function FighterAssignSheet({
               })}
             </div>
 
-            <div className="border-t border-line p-3">
-              <Button variant="ghost" className="w-full" onClick={onClose}>Cancelar</Button>
+            <div className="border-t border-line p-4">
+              <button
+                onClick={onClose}
+                className="w-full rounded-xl border border-line bg-smoke px-5 py-3 text-sm font-bold text-mist-2 transition hover:bg-smoke-2 hover:text-white"
+              >
+                Cancelar
+              </button>
             </div>
           </motion.div>
         </motion.div>

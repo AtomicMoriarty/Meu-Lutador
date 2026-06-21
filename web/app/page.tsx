@@ -21,12 +21,12 @@ import { MagneticCta } from "@/components/ui/magnetic-cta";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { Toast } from "@/components/ui/toast";
 import { Landing } from "@/components/Landing";
+import { RefreshCw } from "lucide-react";
 
 type Stage = "intro" | "create" | "build" | "ready" | "loading" | "fight" | "gameover" | "champion";
 const TOTAL = 8;
 const num = (x: unknown) => Number(x) || 0;
 
-// Estilo (postura) e arte principal: buff (+10%) na área escolhida, nerf (-10%) na oposta.
 const STANCES: Record<string, { label: string; emoji: string; buff: string[]; nerf: string[] }> = {
   defensivo: { label: "Defensivo", emoji: "🛡️", buff: ["queixo", "defesa_queda", "recuperacao"], nerf: ["poder_de_mao", "volume_velocidade"] },
   equilibrado: { label: "Equilibrado", emoji: "⚖️", buff: [], nerf: [] },
@@ -61,7 +61,6 @@ function toFighter(name: string, entries: { attr: string; value: number; source?
 }
 
 function buildOpponents(pool: FullFighter[]): FullFighter[] {
-  // take the STRONGEST candidates (real challenge), weakest-of-those first.
   const sorted = [...pool].sort((a, b) => num(b.overall) - num(a.overall));
   return sorted.slice(0, TOTAL).reverse();
 }
@@ -71,9 +70,8 @@ const DISC_KEYS = Object.keys(DISCIPLINES);
 const pickKey = (a: string[]) => a[Math.floor(Math.random() * a.length)]!;
 
 function opponentFighter(o: FullFighter, index: number): FighterInput {
-  const scale = 1.05 + index * 0.06; // 1.05 (luta 1) .. 1.47 (main event) — bem mais duro
-  const floor = 40 + index * 3; // sobe o piso: oponentes sem pontos fracos exploráveis
-  // opponents also draw a random stance + art (buff/nerf), to be fair to the player
+  const scale = 1.05 + index * 0.06;
+  const floor = 40 + index * 3;
   const oStance = pickKey(STANCE_KEYS);
   const oDisc = pickKey(DISC_KEYS);
   const entries = ATTRIBUTE_SLOTS.map((s) => {
@@ -85,6 +83,8 @@ function opponentFighter(o: FullFighter, index: number): FighterInput {
 
 const fightLabel = (i: number) => (i === 7 ? "MAIN EVENT" : i === 6 ? "CO-MAIN" : `Luta ${i + 1}`);
 const roundsFor = (i: number): 3 | 5 => (i >= 6 ? 5 : 3);
+
+const stageTransition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const };
 
 export default function Page() {
   const [stage, setStage] = useState<Stage>("intro");
@@ -121,8 +121,6 @@ export default function Page() {
       setRolling(false);
     }
   }
-  // Main roll: only when the current batch was resolved (assigned), so you can't
-  // fish endlessly. Re-roll: discard the current 10 without assigning — max 3/session.
   function rollMain() {
     if (rolling || batch.length > 0) return;
     void fetchBatch();
@@ -201,7 +199,7 @@ export default function Page() {
     <MotionConfig reducedMotion="user">
       <div
         className="pointer-events-none fixed inset-0 -z-10 transition-opacity duration-700"
-        style={{ opacity: stage === "intro" ? 0.7 : 0.3 }}
+        style={{ opacity: stage === "intro" ? 0.7 : 0.25 }}
         aria-hidden
       >
         <BackgroundGradientAnimation interactive={false} />
@@ -211,56 +209,56 @@ export default function Page() {
 
       <AnimatePresence mode="wait">
         {stage === "intro" ? (
-          <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
+          <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20, filter: "blur(6px)" }} transition={stageTransition}>
             <Landing onStart={() => setStage("create")} />
           </motion.div>
         ) : (
-          <motion.div key="game" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
+          <motion.div key="game" initial={{ opacity: 0, y: 16, filter: "blur(4px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={stageTransition}>
             <main className="relative mx-auto w-full max-w-xl px-4 pb-28 pt-6">
-              <header className="mb-6 text-center">
-                <p className="eyebrow">Octógono dos Sonhos</p>
-                <h1 className="display mt-1 text-3xl text-glow">MEU LUTADOR</h1>
+              <header className="mb-8 text-center">
+                <p className="eyebrow text-mist/80">Octógono dos Sonhos</p>
+                <h1 className="display mt-1.5 text-3xl text-glow">MEU LUTADOR</h1>
               </header>
 
               <AnimatePresence mode="wait">
                 {stage === "create" && (
-                  <motion.section key="create" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
+                  <motion.section key="create" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={stageTransition} className="flex flex-col gap-5">
                     <div>
-                      <p className="eyebrow">Passo 1 de 3</p>
-                      <h2 className="display mt-1 text-2xl">Crie seu personagem</h2>
+                      <p className="eyebrow text-blood-2">Passo 1 de 3</p>
+                      <h2 className="display mt-1.5 text-2xl">Crie seu personagem</h2>
                     </div>
 
-                    <div className="card p-4">
+                    <div className="card p-5">
                       <label htmlFor="fighter-name" className="eyebrow">Nome</label>
-                      <input id="fighter-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-lg border border-line bg-ink-3 px-3 py-2 font-bold outline-none transition focus:border-blood" />
+                      <input id="fighter-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-2.5 w-full rounded-xl border border-line bg-ink-3/80 px-4 py-2.5 font-bold outline-none transition focus:border-blood focus:ring-1 focus:ring-blood/30" />
                     </div>
 
-                    <div className="card p-4">
-                      <p className="eyebrow mb-2">Estilo</p>
-                      <div className="grid grid-cols-3 gap-2">
+                    <div className="card p-5">
+                      <p className="eyebrow mb-3">Estilo</p>
+                      <div className="grid grid-cols-3 gap-2.5">
                         {Object.entries(STANCES).map(([k, vv]) => (
-                          <button key={k} onClick={() => setStance(k)} className={cx("rounded-xl border p-3 text-center transition", stance === k ? "border-blood bg-blood/10" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>
-                            <div className="text-xl" aria-hidden>{vv.emoji}</div>
-                            <div className="mt-1 text-xs font-bold">{vv.label}</div>
+                          <button key={k} onClick={() => setStance(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", stance === k ? "border-blood bg-blood/10 shadow-[0_0_20px_-4px_rgba(225,29,42,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
+                            <div className="text-2xl" aria-hidden>{vv.emoji}</div>
+                            <div className="mt-1.5 text-xs font-bold">{vv.label}</div>
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="card p-4">
-                      <p className="eyebrow mb-2">Arte principal</p>
-                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    <div className="card p-5">
+                      <p className="eyebrow mb-3">Arte principal</p>
+                      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
                         {Object.entries(DISCIPLINES).map(([k, vv]) => (
-                          <button key={k} onClick={() => setDiscipline(k)} className={cx("rounded-xl border p-3 text-center transition", discipline === k ? "border-gold bg-gold/10" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>
-                            <div className="text-xl" aria-hidden>{vv.emoji}</div>
-                            <div className="mt-1 text-[11px] font-bold leading-tight">{vv.label}</div>
+                          <button key={k} onClick={() => setDiscipline(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", discipline === k ? "border-gold bg-gold/10 shadow-[0_0_20px_-4px_rgba(245,181,63,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
+                            <div className="text-2xl" aria-hidden>{vv.emoji}</div>
+                            <div className="mt-1.5 text-[11px] font-bold leading-tight">{vv.label}</div>
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="card p-4 text-sm">
-                      <p className="eyebrow mb-2">Efeito do estilo</p>
+                    <div className="card p-5 text-sm">
+                      <p className="eyebrow mb-2.5">Efeito do estilo</p>
                       {(() => {
                         const ups = new Set<string>(), downs = new Set<string>();
                         for (const m of [STANCES[stance], DISCIPLINES[discipline]]) {
@@ -269,8 +267,8 @@ export default function Page() {
                         }
                         for (const a of [...ups]) if (downs.has(a)) { ups.delete(a); downs.delete(a); }
                         return (
-                          <div className="flex flex-col gap-1.5">
-                            <p className="text-emerald-300">▲ Melhora: {[...ups].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
+                          <div className="flex flex-col gap-2">
+                            <p className="text-emerald-400">▲ Melhora: {[...ups].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
                             <p className="text-blood-2">▼ Piora: {[...downs].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
                           </div>
                         );
@@ -282,53 +280,63 @@ export default function Page() {
                 )}
 
                 {stage === "build" && (
-                  <motion.section key="build" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
+                  <motion.section key="build" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={stageTransition} className="flex flex-col gap-5">
                     <div>
-                      <p className="eyebrow">Passo 2 de 3</p>
-                      <h2 className="display mt-1 text-2xl">Monte seu lutador</h2>
+                      <p className="eyebrow text-blood-2">Passo 2 de 3</p>
+                      <h2 className="display mt-1.5 text-2xl">Monte seu lutador</h2>
                     </div>
 
-                    <div className="card flex items-center justify-between gap-2 p-3 text-sm">
-                      <span className="truncate font-bold">{name || "Meu Lutador"}</span>
+                    <div className="card flex items-center justify-between gap-2 p-3.5 text-sm">
+                      <span className="truncate font-bold text-white">{name || "Meu Lutador"}</span>
                       <span className="shrink-0 text-xs text-mist">{STANCES[stance]?.emoji} {STANCES[stance]?.label} · {DISCIPLINES[discipline]?.emoji} {DISCIPLINES[discipline]?.label}</span>
                     </div>
 
-                    {/* DADO + sorteio */}
-                    <div className="card flex flex-col items-center gap-3 p-4">
+                    {/* Dado + sorteio */}
+                    <div className="card flex flex-col items-center gap-4 p-5">
                       <Dice rolling={rolling} disabled={batch.length > 0} onRoll={rollMain} />
-                      <p className="text-center text-xs text-mist">
+                      <p className="text-center text-xs leading-relaxed text-mist">
                         Role o dado, toque num lutador e escolha <strong className="text-white">o atributo</strong> dele.
-                        Só depois você rola de novo. Re-sorteios: <strong className="text-gold">{rerolls}</strong> na sessão.
+                        Re-sorteios: <strong className="text-gold">{rerolls}</strong>
                       </p>
                       {batch.length > 0 && (
                         <button
                           onClick={reroll}
                           disabled={rolling || rerolls <= 0}
-                          className="rounded-full border border-line bg-white/5 px-4 py-1.5 text-xs font-bold text-mist-2 transition hover:text-white disabled:opacity-40"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-smoke px-4 py-1.5 text-xs font-bold text-mist-2 transition hover:bg-smoke-2 hover:text-white disabled:opacity-40"
                         >
-                          🎲 Re-sortear estes 10 ({rerolls})
+                          <RefreshCw className="size-3" aria-hidden />
+                          Re-sortear ({rerolls})
                         </button>
                       )}
-                      <div className="grid w-full grid-cols-2 gap-2">
+                      <div className="grid w-full grid-cols-2 gap-2.5">
                         {rolling && batch.length === 0 ? (
-                          <div className="col-span-2 grid place-items-center py-6"><Spinner label="Sorteando…" /></div>
+                          <>
+                            {Array.from({ length: 6 }).map((_, i) => (
+                              <div key={i} className="skeleton h-16 rounded-xl" />
+                            ))}
+                          </>
                         ) : batch.length === 0 ? (
-                          <p className="col-span-2 py-6 text-center text-sm text-mist">Role o dado para sortear 10 lutadores.</p>
+                          <div className="col-span-2 flex flex-col items-center gap-3 py-8">
+                            <div className="grid size-16 place-items-center rounded-2xl border border-dashed border-line-2">
+                              <span className="text-3xl opacity-30">🎲</span>
+                            </div>
+                            <p className="text-center text-sm text-mist">Role o dado para sortear 10 lutadores</p>
+                          </div>
                         ) : (
                           batch.map((f, i) => (
                             <motion.button
                               key={f.fighter_id + i}
-                              initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                              initial={{ opacity: 0, y: 12, scale: 0.96 }}
                               animate={{ opacity: 1, y: 0, scale: 1 }}
-                              transition={{ delay: Math.min(i * 0.04, 0.4), ease: [0.22, 1, 0.36, 1] }}
+                              transition={{ delay: Math.min(i * 0.05, 0.45), ease: [0.22, 1, 0.36, 1] }}
                               whileTap={{ scale: 0.96 }}
                               onClick={() => setSelected(f)}
-                              className="flex items-center gap-2 rounded-xl border border-line bg-white/[0.03] p-2.5 text-left transition hover:border-gold/40 hover:bg-white/[0.06]"
+                              className="flex items-center gap-2.5 rounded-xl border border-line bg-smoke p-3 text-left transition-all hover:border-gold/40 hover:bg-smoke-2 hover:shadow-[0_0_16px_-4px_rgba(245,181,63,0.2)]"
                             >
-                              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink-3 text-base" aria-hidden>🥊</div>
+                              <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-ink-3 text-lg" aria-hidden>🥊</div>
                               <div className="min-w-0">
                                 <span className="block truncate text-sm font-bold">{f.name}</span>
-                                <span className="block truncate text-[10px] text-mist">{f.nickname ? `“${f.nickname}”` : "toque para encaixar"}</span>
+                                <span className="block truncate text-[10px] text-mist">{f.nickname ? `"${f.nickname}"` : "toque para encaixar"}</span>
                               </div>
                             </motion.button>
                           ))
@@ -336,25 +344,28 @@ export default function Page() {
                       </div>
                     </div>
 
-                    {/* slots montados */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {ATTRIBUTE_SLOTS.map((s) => {
+                    {/* Slots montados */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {ATTRIBUTE_SLOTS.map((s, i) => {
                         const chosen = build[s.attribute_name];
                         return (
-                          <button
+                          <motion.button
                             key={s.attribute_name}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
                             onClick={() => chosen && setBuild((b) => { const n = { ...b }; delete n[s.attribute_name]; return n; })}
                             aria-label={chosen ? `${s.label}: ${chosen.name}. Tocar para limpar.` : `${s.label}: vazio`}
-                            className={cx("flex items-center gap-2 rounded-xl border p-2.5 text-left transition", chosen ? "border-blood/50 bg-blood/[0.06]" : "border-dashed border-line bg-transparent")}
+                            className={cx("flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all", chosen ? "border-blood/40 bg-blood/[0.06] shadow-[0_0_16px_-6px_rgba(225,29,42,0.2)]" : "border-dashed border-line bg-transparent")}
                           >
-                            <div className={cx("grid size-9 shrink-0 place-items-center rounded-lg text-base", chosen ? "bg-blood/20" : "bg-ink-3")}>
+                            <div className={cx("grid size-10 shrink-0 place-items-center rounded-lg text-lg", chosen ? "bg-blood/15" : "bg-ink-3")}>
                               <span aria-hidden>{s.emoji}</span>
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[10px] uppercase tracking-wide text-mist">{s.label}</p>
-                              <span className="block truncate text-xs font-bold">{chosen ? chosen.name : <span className="text-mist">vazio</span>}</span>
+                              <span className="block truncate text-xs font-bold">{chosen ? chosen.name : <span className="text-mist/50">vazio</span>}</span>
                             </div>
-                          </button>
+                          </motion.button>
                         );
                       })}
                     </div>
@@ -362,48 +373,49 @@ export default function Page() {
                 )}
 
                 {stage === "ready" && (
-                  <motion.section key="ready" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
+                  <motion.section key="ready" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={stageTransition} className="flex flex-col gap-5">
                     <div>
-                      <p className="eyebrow">Passo 3 de 3</p>
-                      <h2 className="display mt-1 text-2xl">Como assistir</h2>
+                      <p className="eyebrow text-blood-2">Passo 3 de 3</p>
+                      <h2 className="display mt-1.5 text-2xl">Como assistir</h2>
                     </div>
-                    <div className="card p-4">
-                      <p className="eyebrow mb-2">Velocidade</p>
-                      <div className="grid grid-cols-3 gap-2">
+                    <div className="card p-5">
+                      <p className="eyebrow mb-3">Velocidade</p>
+                      <div className="grid grid-cols-3 gap-2.5">
                         {(["normal", "rapida", "ultra"] as Speed[]).map((s) => (
-                          <button key={s} onClick={() => setSpeed(s)} className={cx("rounded-xl border p-3 text-center text-sm font-bold transition", speed === s ? "border-blood bg-blood/10" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>
+                          <button key={s} onClick={() => setSpeed(s)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", speed === s ? "border-blood bg-blood/10 shadow-[0_0_20px_-4px_rgba(225,29,42,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
                             {s === "normal" ? "Normal" : s === "rapida" ? "Rápida" : "Ultra"}
                           </button>
                         ))}
                       </div>
-                      <p className="mt-2 text-xs text-mist">Controla o ritmo dos comentários round a round.</p>
+                      <p className="mt-2.5 text-xs text-mist">Controla o ritmo dos comentários round a round.</p>
                     </div>
-                    <div className="card p-4">
-                      <p className="eyebrow mb-2">Modo</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button onClick={() => setAuto(false)} className={cx("rounded-xl border p-3 text-center text-sm font-bold transition", !auto ? "border-gold bg-gold/10 text-gold" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>Luta a luta</button>
-                        <button onClick={() => setAuto(true)} className={cx("rounded-xl border p-3 text-center text-sm font-bold transition", auto ? "border-gold bg-gold/10 text-gold" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>Automático</button>
+                    <div className="card p-5">
+                      <p className="eyebrow mb-3">Modo</p>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <button onClick={() => setAuto(false)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", !auto ? "border-gold bg-gold/10 text-gold shadow-[0_0_20px_-4px_rgba(245,181,63,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>Luta a luta</button>
+                        <button onClick={() => setAuto(true)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", auto ? "border-gold bg-gold/10 text-gold shadow-[0_0_20px_-4px_rgba(245,181,63,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>Automático</button>
                       </div>
-                      <p className="mt-2 text-xs text-mist">{auto ? "As 8 lutas rodam sozinhas, uma após a outra." : "Você clica para avançar a cada luta."}</p>
+                      <p className="mt-2.5 text-xs text-mist">{auto ? "As 8 lutas rodam sozinhas, uma após a outra." : "Você clica para avançar a cada luta."}</p>
                     </div>
                     <HoverButton className="w-full disabled:opacity-40" onClick={startCareer} disabled={busy}>Começar carreira →</HoverButton>
-                    <button onClick={() => setStage("build")} className="text-center text-xs text-mist underline">voltar a montar</button>
+                    <button onClick={() => setStage("build")} className="text-center text-xs text-mist underline transition hover:text-white">← voltar a montar</button>
                   </motion.section>
                 )}
 
                 {stage === "loading" && (
-                  <motion.section key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <div className="card grid place-items-center gap-4 p-10">
-                      <div className="pulse-ring grid h-16 w-16 place-items-center rounded-full bg-blood text-2xl">🥊</div>
+                  <motion.section key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={stageTransition}>
+                    <div className="card grid place-items-center gap-5 p-12">
+                      <div className="pulse-ring grid size-20 place-items-center rounded-full bg-blood/80 text-3xl shadow-[0_0_40px_-8px_rgba(225,29,42,0.6)]">🥊</div>
                       <Spinner label="Montando o card…" />
+                      <p className="text-xs text-mist/60">Buscando adversários dignos</p>
                     </div>
                   </motion.section>
                 )}
 
                 {stage === "fight" && result && player && (
-                  <motion.section key={`fight-${idx}`} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-3">
+                  <motion.section key={`fight-${idx}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={stageTransition} className="flex flex-col gap-3">
                     <div className="flex items-center justify-between text-xs">
-                      <span className={cx("rounded-full px-3 py-1 font-bold", idx >= 6 ? "bg-gold/20 text-gold" : "bg-blood/15 text-blood-2")}>{fightLabel(idx)} · {roundsFor(idx)} rounds</span>
+                      <span className={cx("rounded-full px-3 py-1.5 font-bold", idx >= 6 ? "bg-gold/15 text-gold shadow-[0_0_12px_-2px_rgba(245,181,63,0.3)]" : "bg-blood/12 text-blood-2")}>{fightLabel(idx)} · {roundsFor(idx)} rounds</span>
                       <span className="text-mist">Cartel {record.w}–{record.l} · {idx + 1}/{TOTAL}</span>
                     </div>
                     <FightPlayback result={result} aName={player.name} bName={oppName} playerWon={playerWon} ctaLabel={ctaLabel} onContinue={afterFight} speed={speed} onSpeed={setSpeed} auto={auto} onAuto={setAuto} />
@@ -411,35 +423,35 @@ export default function Page() {
                 )}
 
                 {stage === "gameover" && (
-                  <motion.section key="over" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", damping: 18, stiffness: 220 }} className="card p-8 text-center">
-                    <p className="text-5xl">💀</p>
-                    <h2 className="display mt-2 text-2xl text-glow">Fim da campanha</h2>
-                    <p className="mt-1 text-mist">Você caiu na {fightLabel(idx)}. Cartel final: <strong className="text-white">{record.w} vitórias</strong>.</p>
-                    <div className="mt-6 flex justify-center"><MagneticCta className="w-full" onClick={newRun}>Tentar de novo</MagneticCta></div>
+                  <motion.section key="over" initial={{ opacity: 0, scale: 0.92, filter: "blur(6px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ type: "spring", damping: 18, stiffness: 220 }} className="card p-10 text-center">
+                    <div className="mx-auto grid size-20 place-items-center rounded-full bg-blood/10 text-5xl">💀</div>
+                    <h2 className="display mt-4 text-3xl text-glow">Fim da campanha</h2>
+                    <p className="mt-2 text-mist">Você caiu na {fightLabel(idx)}. Cartel final: <strong className="text-white">{record.w} vitórias</strong>.</p>
+                    <div className="mt-8 flex justify-center"><MagneticCta className="w-full" onClick={newRun}>Tentar de novo</MagneticCta></div>
                   </motion.section>
                 )}
 
                 {stage === "champion" && (
-                  <motion.section key="champ" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", damping: 14 }} className="card-hairline overflow-hidden text-center">
-                    <div className="bg-gradient-to-b from-gold/30 to-transparent p-8">
-                      <BeltBadge className="mx-auto mb-3" size={88} />
-                      <h2 className="punch-in display gold-glow text-3xl">CAMPEÃO!</h2>
-                      <p className="mt-2 text-white/80"><strong>{name}</strong> venceu as 8 lutas e conquistou o cinturão. Invicto: 8–0.</p>
+                  <motion.section key="champ" initial={{ opacity: 0, scale: 0.88, filter: "blur(8px)" }} animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }} transition={{ type: "spring", damping: 14 }} className="card-hairline overflow-hidden text-center">
+                    <div className="bg-gradient-to-b from-gold/25 to-transparent px-6 py-10">
+                      <BeltBadge className="mx-auto mb-4" size={96} />
+                      <h2 className="punch-in display gold-glow text-4xl">CAMPEÃO!</h2>
+                      <p className="mt-3 text-white/80"><strong>{name}</strong> venceu as 8 lutas e conquistou o cinturão. Invicto: 8–0.</p>
                     </div>
-                    <div className="p-4"><MagneticCta tone="gold" className="w-full" onClick={newRun}>Jogar de novo</MagneticCta></div>
+                    <div className="p-5"><MagneticCta tone="gold" className="w-full" onClick={newRun}>Jogar de novo</MagneticCta></div>
                   </motion.section>
                 )}
               </AnimatePresence>
 
               {stage === "build" && (
-                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ink/90 backdrop-blur">
-                  <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-3">
+                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ink/90 backdrop-blur-lg">
+                  <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-3.5">
                     <div className="flex-1">
                       <div className="flex justify-between text-xs text-mist">
                         <span>{filled}/{ATTRIBUTE_SLOTS.length} montados</span>
-                        {filled < ATTRIBUTE_SLOTS.length && <span>vazios viram 50</span>}
+                        {filled < ATTRIBUTE_SLOTS.length && <span className="text-mist/60">vazios viram 50</span>}
                       </div>
-                      <div className="mt-1"><StatBar value={(filled / ATTRIBUTE_SLOTS.length) * 100} tone="gold" /></div>
+                      <div className="mt-1.5"><StatBar value={(filled / ATTRIBUTE_SLOTS.length) * 100} tone="gold" /></div>
                     </div>
                     <HoverButton className="shrink-0 disabled:opacity-40" onClick={() => setStage("ready")} disabled={busy}>Lutar →</HoverButton>
                   </div>
@@ -457,7 +469,7 @@ export default function Page() {
           if (selected) {
             const value = num(selected.attrs?.[attr]);
             setBuild((b) => ({ ...b, [attr]: { fighter_id: selected.fighter_id, name: selected.name, nickname: selected.nickname, value } }));
-            setBatch([]); // consume the roll — you must roll again for the next pick
+            setBatch([]);
           }
           setSelected(null);
         }}

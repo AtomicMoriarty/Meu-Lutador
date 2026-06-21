@@ -111,7 +111,7 @@ export function FightPlayback({
         </div>
       </div>
 
-      <div ref={feedRef} className="card relative max-h-[46dvh] overflow-y-auto p-4">
+      <div ref={feedRef} className="card relative max-h-[46dvh] overflow-y-auto p-4 scroll-smooth">
         {events.slice(0, n).map((e, i) => {
           const header = e.round !== lastRound && e.type === "round_start" ? ((lastRound = e.round), true) : false;
           return (
@@ -131,7 +131,7 @@ export function FightPlayback({
       {!done && (
         <button
           onClick={() => setN(events.length)}
-          className="fixed bottom-5 right-4 z-40 rounded-full border border-line bg-ink-3/90 px-4 py-2 text-xs font-bold text-mist-2 shadow-[0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur transition hover:border-blood/40 hover:text-white"
+          className="fixed bottom-5 right-4 z-40 rounded-full border border-line bg-ink-3/90 px-4 py-2.5 text-xs font-bold text-mist-2 shadow-[0_8px_30px_rgba(0,0,0,0.7)] backdrop-blur-lg transition hover:border-blood/40 hover:text-white"
         >
           Pular ⏭
         </button>

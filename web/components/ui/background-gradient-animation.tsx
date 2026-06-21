@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 // Themed to the "Octógono dos Sonhos" palette (blood red / gold over near-black).
 export const BackgroundGradientAnimation = ({
-  gradientBackgroundStart = "rgb(10, 10, 12)",
-  gradientBackgroundEnd = "rgb(18, 8, 10)",
+  gradientBackgroundStart = "rgb(7, 7, 10)",
+  gradientBackgroundEnd = "rgb(14, 8, 10)",
   firstColor = "225, 29, 42",
   secondColor = "245, 181, 63",
   thirdColor = "120, 20, 32",
