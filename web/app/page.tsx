@@ -14,7 +14,7 @@ import {
 import { Spinner, StatBar, cx } from "@/components/ui";
 import { Dice } from "@/components/ui/dice";
 import { FighterAssignSheet } from "@/components/FighterAssignSheet";
-import { FightPlayback } from "@/components/FightPlayback";
+import { FightPlayback, type Speed } from "@/components/FightPlayback";
 import { BackgroundGradientAnimation } from "@/components/ui/background-gradient-animation";
 import { HoverButton } from "@/components/ui/hover-button";
 import { MagneticCta } from "@/components/ui/magnetic-cta";
@@ -22,7 +22,7 @@ import { BeltBadge } from "@/components/ui/belt-badge";
 import { Toast } from "@/components/ui/toast";
 import { Landing } from "@/components/Landing";
 
-type Stage = "intro" | "create" | "build" | "loading" | "fight" | "gameover" | "champion";
+type Stage = "intro" | "create" | "build" | "ready" | "loading" | "fight" | "gameover" | "champion";
 const TOTAL = 8;
 const num = (x: unknown) => Number(x) || 0;
 
@@ -97,6 +97,8 @@ export default function Page() {
   const [rolling, setRolling] = useState(false);
   const [rerolls, setRerolls] = useState(3);
   const [selected, setSelected] = useState<FullFighter | null>(null);
+  const [speed, setSpeed] = useState<Speed>("rapida");
+  const [auto, setAuto] = useState(false);
 
   const [player, setPlayer] = useState<FighterInput | null>(null);
   const [opponents, setOpponents] = useState<FullFighter[]>([]);
@@ -357,6 +359,36 @@ export default function Page() {
                   </motion.section>
                 )}
 
+                {stage === "ready" && (
+                  <motion.section key="ready" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
+                    <div>
+                      <p className="eyebrow">Passo 3 de 3</p>
+                      <h2 className="display mt-1 text-2xl">Como assistir</h2>
+                    </div>
+                    <div className="card p-4">
+                      <p className="eyebrow mb-2">Velocidade</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(["normal", "rapida", "ultra"] as Speed[]).map((s) => (
+                          <button key={s} onClick={() => setSpeed(s)} className={cx("rounded-xl border p-3 text-center text-sm font-bold transition", speed === s ? "border-blood bg-blood/10" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>
+                            {s === "normal" ? "Normal" : s === "rapida" ? "Rápida" : "Ultra"}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-xs text-mist">Controla o ritmo dos comentários round a round.</p>
+                    </div>
+                    <div className="card p-4">
+                      <p className="eyebrow mb-2">Modo</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button onClick={() => setAuto(false)} className={cx("rounded-xl border p-3 text-center text-sm font-bold transition", !auto ? "border-gold bg-gold/10 text-gold" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>Luta a luta</button>
+                        <button onClick={() => setAuto(true)} className={cx("rounded-xl border p-3 text-center text-sm font-bold transition", auto ? "border-gold bg-gold/10 text-gold" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>Automático</button>
+                      </div>
+                      <p className="mt-2 text-xs text-mist">{auto ? "As 8 lutas rodam sozinhas, uma após a outra." : "Você clica para avançar a cada luta."}</p>
+                    </div>
+                    <HoverButton className="w-full disabled:opacity-40" onClick={startCareer} disabled={busy}>Começar carreira →</HoverButton>
+                    <button onClick={() => setStage("build")} className="text-center text-xs text-mist underline">voltar a montar</button>
+                  </motion.section>
+                )}
+
                 {stage === "loading" && (
                   <motion.section key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="card grid place-items-center gap-4 p-10">
@@ -372,7 +404,7 @@ export default function Page() {
                       <span className={cx("rounded-full px-3 py-1 font-bold", idx >= 6 ? "bg-gold/20 text-gold" : "bg-blood/15 text-blood-2")}>{fightLabel(idx)} · {roundsFor(idx)} rounds</span>
                       <span className="text-mist">Cartel {record.w}–{record.l} · {idx + 1}/{TOTAL}</span>
                     </div>
-                    <FightPlayback result={result} aName={player.name} bName={oppName} playerWon={playerWon} ctaLabel={ctaLabel} onContinue={afterFight} />
+                    <FightPlayback result={result} aName={player.name} bName={oppName} playerWon={playerWon} ctaLabel={ctaLabel} onContinue={afterFight} speed={speed} onSpeed={setSpeed} auto={auto} onAuto={setAuto} />
                   </motion.section>
                 )}
 
@@ -407,7 +439,7 @@ export default function Page() {
                       </div>
                       <div className="mt-1"><StatBar value={(filled / ATTRIBUTE_SLOTS.length) * 100} tone="gold" /></div>
                     </div>
-                    <HoverButton className="shrink-0 disabled:opacity-40" onClick={startCareer} disabled={busy}>Lutar →</HoverButton>
+                    <HoverButton className="shrink-0 disabled:opacity-40" onClick={() => setStage("ready")} disabled={busy}>Lutar →</HoverButton>
                   </div>
                 </div>
               )}
