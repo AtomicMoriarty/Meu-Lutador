@@ -144,7 +144,6 @@ export default function Page() {
     setIdx(0);
     setResult(null);
     setStage("build");
-    void fetchBatch();
   }
 
   function startFight(index: number, p: FighterInput, opps: FullFighter[]) {
@@ -341,8 +340,8 @@ export default function Page() {
                               <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-ink-3">
                                 <span className="text-sm font-black tabular text-gold">{f.overall || "?"}</span>
                               </div>
-                              <div className="min-w-0">
-                                <span className="block truncate text-sm font-bold">{f.name}</span>
+                              <div className="min-w-0 flex-1">
+                                <span className="block truncate text-xs font-bold">{f.name}</span>
                                 <span className="block truncate text-[10px] text-mist">{f.nickname ? `"${f.nickname}"` : "toque para encaixar"}</span>
                               </div>
                             </motion.button>
