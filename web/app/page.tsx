@@ -22,9 +22,34 @@ import { BeltBadge } from "@/components/ui/belt-badge";
 import { Toast } from "@/components/ui/toast";
 import { Landing } from "@/components/Landing";
 
-type Stage = "intro" | "build" | "loading" | "fight" | "gameover" | "champion";
+type Stage = "intro" | "create" | "build" | "loading" | "fight" | "gameover" | "champion";
 const TOTAL = 8;
 const num = (x: unknown) => Number(x) || 0;
+
+// Estilo (postura) e arte principal: buff (+10%) na área escolhida, nerf (-10%) na oposta.
+const STANCES: Record<string, { label: string; emoji: string; buff: string[]; nerf: string[] }> = {
+  defensivo: { label: "Defensivo", emoji: "🛡️", buff: ["queixo", "defesa_queda", "recuperacao"], nerf: ["poder_de_mao", "volume_velocidade"] },
+  equilibrado: { label: "Equilibrado", emoji: "⚖️", buff: [], nerf: [] },
+  agressivo: { label: "Agressivo", emoji: "🔥", buff: ["poder_de_mao", "volume_velocidade"], nerf: ["queixo", "defesa_queda"] },
+};
+const DISCIPLINES: Record<string, { label: string; emoji: string; buff: string[]; nerf: string[] }> = {
+  jiu_jitsu: { label: "Jiu-Jitsu", emoji: "🥋", buff: ["finalizacao", "controle_chao"], nerf: ["poder_de_mao"] },
+  boxe: { label: "Boxe", emoji: "🥊", buff: ["poder_de_mao", "volume_velocidade"], nerf: ["controle_chao"] },
+  wrestling: { label: "Wrestling", emoji: "🤼", buff: ["wrestling_quedas", "controle_chao"], nerf: ["chute_perna"] },
+  muay_thai: { label: "Muay Thai", emoji: "🦵", buff: ["chute_perna", "poder_de_mao"], nerf: ["wrestling_quedas"] },
+  karate: { label: "Karatê", emoji: "🐉", buff: ["chute_perna", "volume_velocidade"], nerf: ["finalizacao"] },
+};
+const LABEL_BY_ATTR = Object.fromEntries(ATTRIBUTE_SLOTS.map((s) => [s.attribute_name, s.label]));
+
+function modFactor(attr: string, stance: string, discipline: string): number {
+  let f = 1;
+  for (const m of [STANCES[stance], DISCIPLINES[discipline]]) {
+    if (!m) continue;
+    if (m.buff.includes(attr)) f *= 1.1;
+    if (m.nerf.includes(attr)) f *= 0.9;
+  }
+  return f;
+}
 
 function toFighter(name: string, entries: { attr: string; value: number; source?: string }[]): FighterInput {
   const attrs: Partial<Record<AttrKey, { value: number; source?: string }>> = {};
@@ -65,6 +90,8 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState("Meu Lutador");
+  const [stance, setStance] = useState<string>("equilibrado");
+  const [discipline, setDiscipline] = useState<string>("boxe");
   const [build, setBuild] = useState<Build>({});
   const [batch, setBatch] = useState<FullFighter[]>([]);
   const [rolling, setRolling] = useState(false);
@@ -131,7 +158,9 @@ export default function Page() {
     try {
       const entries = ATTRIBUTE_SLOTS.map((s) => {
         const o = build[s.attribute_name];
-        return { attr: s.attribute_name, value: o ? num(o.value) : 50, source: o?.name };
+        const base = o ? num(o.value) : 50;
+        const value = Math.max(1, Math.min(99, Math.round(base * modFactor(s.attribute_name, stance, discipline))));
+        return { attr: s.attribute_name, value, source: o?.name };
       });
       const p = toFighter(name || "Meu Lutador", entries);
       setPlayer(p);
@@ -179,7 +208,7 @@ export default function Page() {
       <AnimatePresence mode="wait">
         {stage === "intro" ? (
           <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-            <Landing onStart={newRun} />
+            <Landing onStart={() => setStage("create")} />
           </motion.div>
         ) : (
           <motion.div key="game" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
@@ -190,16 +219,74 @@ export default function Page() {
               </header>
 
               <AnimatePresence mode="wait">
-                {stage === "build" && (
-                  <motion.section key="build" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
+                {stage === "create" && (
+                  <motion.section key="create" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
                     <div>
                       <p className="eyebrow">Passo 1 de 3</p>
-                      <h2 className="display mt-1 text-2xl">Monte seu lutador</h2>
+                      <h2 className="display mt-1 text-2xl">Crie seu personagem</h2>
                     </div>
 
                     <div className="card p-4">
-                      <label htmlFor="fighter-name" className="eyebrow">Nome do seu lutador</label>
+                      <label htmlFor="fighter-name" className="eyebrow">Nome</label>
                       <input id="fighter-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-lg border border-line bg-ink-3 px-3 py-2 font-bold outline-none transition focus:border-blood" />
+                    </div>
+
+                    <div className="card p-4">
+                      <p className="eyebrow mb-2">Estilo</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {Object.entries(STANCES).map(([k, vv]) => (
+                          <button key={k} onClick={() => setStance(k)} className={cx("rounded-xl border p-3 text-center transition", stance === k ? "border-blood bg-blood/10" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>
+                            <div className="text-xl" aria-hidden>{vv.emoji}</div>
+                            <div className="mt-1 text-xs font-bold">{vv.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="card p-4">
+                      <p className="eyebrow mb-2">Arte principal</p>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                        {Object.entries(DISCIPLINES).map(([k, vv]) => (
+                          <button key={k} onClick={() => setDiscipline(k)} className={cx("rounded-xl border p-3 text-center transition", discipline === k ? "border-gold bg-gold/10" : "border-line bg-white/[0.03] hover:bg-white/[0.06]")}>
+                            <div className="text-xl" aria-hidden>{vv.emoji}</div>
+                            <div className="mt-1 text-[11px] font-bold leading-tight">{vv.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="card p-4 text-sm">
+                      <p className="eyebrow mb-2">Efeito do estilo</p>
+                      {(() => {
+                        const ups = new Set<string>(), downs = new Set<string>();
+                        for (const m of [STANCES[stance], DISCIPLINES[discipline]]) {
+                          m?.buff.forEach((a) => ups.add(a));
+                          m?.nerf.forEach((a) => downs.add(a));
+                        }
+                        for (const a of [...ups]) if (downs.has(a)) { ups.delete(a); downs.delete(a); }
+                        return (
+                          <div className="flex flex-col gap-1.5">
+                            <p className="text-emerald-300">▲ +10% {[...ups].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
+                            <p className="text-blood-2">▼ −10% {[...downs].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <MagneticCta className="w-full" onClick={newRun}>Continuar →</MagneticCta>
+                  </motion.section>
+                )}
+
+                {stage === "build" && (
+                  <motion.section key="build" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex flex-col gap-4">
+                    <div>
+                      <p className="eyebrow">Passo 2 de 3</p>
+                      <h2 className="display mt-1 text-2xl">Monte seu lutador</h2>
+                    </div>
+
+                    <div className="card flex items-center justify-between gap-2 p-3 text-sm">
+                      <span className="truncate font-bold">{name || "Meu Lutador"}</span>
+                      <span className="shrink-0 text-xs text-mist">{STANCES[stance]?.emoji} {STANCES[stance]?.label} · {DISCIPLINES[discipline]?.emoji} {DISCIPLINES[discipline]?.label}</span>
                     </div>
 
                     {/* DADO + sorteio */}
