@@ -43,8 +43,8 @@ export const MagneticCta = React.forwardRef<HTMLButtonElement, MagneticCtaProps>
 
     const palette =
       tone === "gold"
-        ? "from-gold to-gold-2 text-ink shadow-[0_10px_40px_-8px_rgba(245,181,63,0.55)]"
-        : "from-blood-2 to-blood text-white shadow-[0_10px_40px_-8px_rgba(225,29,42,0.6)]";
+        ? "from-gold to-gold-2 text-ink shadow-[0_10px_40px_-8px_rgba(245,158,11,0.55)]"
+        : "from-blood-2 to-blood text-white shadow-[0_10px_40px_-8px_rgba(99,102,241,0.6)]";
 
     return (
       <motion.button

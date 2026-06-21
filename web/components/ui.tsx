@@ -36,8 +36,8 @@ export function Button({
   const base =
     "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold tracking-wide transition active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100";
   const styles = {
-    primary: "bg-blood text-white hover:brightness-110 shadow-[0_8px_30px_rgba(225,29,42,0.35)]",
-    gold: "bg-gold text-black hover:brightness-110 shadow-[0_8px_30px_rgba(245,181,63,0.3)]",
+    primary: "bg-blood text-white hover:brightness-110 shadow-[0_8px_30px_rgba(99,102,241,0.35)]",
+    gold: "bg-gold text-black hover:brightness-110 shadow-[0_8px_30px_rgba(245,158,11,0.3)]",
     ghost: "border border-line bg-white/5 text-white hover:bg-white/10",
   }[variant];
   return (

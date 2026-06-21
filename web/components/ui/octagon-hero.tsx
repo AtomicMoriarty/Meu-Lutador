@@ -25,10 +25,10 @@ export function OctagonHero({ className }: { className?: string }) {
         className="absolute inset-0"
         style={{
           background: [
-            "radial-gradient(70% 55% at 50% 25%, rgba(225,29,42,0.18), transparent 70%)",
-            "radial-gradient(50% 40% at 50% 30%, rgba(245,181,63,0.08), transparent 65%)",
-            "radial-gradient(30% 30% at 30% 60%, rgba(225,29,42,0.06), transparent 60%)",
-            "radial-gradient(30% 30% at 70% 60%, rgba(245,181,63,0.04), transparent 60%)",
+            "radial-gradient(70% 55% at 50% 25%, rgba(99,102,241,0.14), transparent 70%)",
+            "radial-gradient(50% 40% at 50% 30%, rgba(245,158,11,0.06), transparent 65%)",
+            "radial-gradient(30% 30% at 30% 60%, rgba(99,102,241,0.05), transparent 60%)",
+            "radial-gradient(30% 30% at 70% 60%, rgba(245,158,11,0.03), transparent 60%)",
           ].join(", "),
         }}
       />
@@ -36,8 +36,8 @@ export function OctagonHero({ className }: { className?: string }) {
         <svg viewBox="0 0 200 200" className="octagon-breathe h-full w-full">
           <defs>
             <radialGradient id="oct-fade" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#f5b53f" stopOpacity="0.0" />
-              <stop offset="50%" stopColor="#e11d2a" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.0" />
+              <stop offset="50%" stopColor="#6366f1" stopOpacity="0.0" />
               <stop offset="100%" stopColor="#07070a" stopOpacity="0.95" />
             </radialGradient>
           </defs>
@@ -50,9 +50,9 @@ export function OctagonHero({ className }: { className?: string }) {
                 fill="none"
                 stroke={
                   i === 0
-                    ? "rgba(245,181,63,0.3)"
+                    ? "rgba(245,158,11,0.3)"
                     : i === 1
-                      ? "rgba(225,29,42,0.2)"
+                      ? "rgba(99,102,241,0.2)"
                       : `rgba(154,160,173,${0.12 - i * 0.02})`
                 }
                 strokeWidth={i === 0 ? 0.8 : 0.4}

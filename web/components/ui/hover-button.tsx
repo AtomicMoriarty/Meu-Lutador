@@ -54,9 +54,9 @@ const HoverButton = React.forwardRef<HTMLButtonElement, HoverButtonProps>(
         ref={buttonRef}
         className={cn(
           "relative isolate cursor-pointer overflow-hidden rounded-2xl px-8 py-3.5 text-base font-bold leading-6 text-white",
-          "bg-[rgba(225,29,42,0.12)] backdrop-blur-lg",
+          "bg-[rgba(99,102,241,0.12)] backdrop-blur-lg",
           "before:pointer-events-none before:absolute before:inset-0 before:z-[1] before:rounded-[inherit]",
-          "before:shadow-[inset_0_0_0_1px_rgba(245,181,63,0.25),inset_0_0_16px_0_rgba(225,29,42,0.18),inset_0_-3px_12px_0_rgba(245,181,63,0.18),0_1px_3px_0_rgba(0,0,0,0.5),0_8px_30px_0_rgba(225,29,42,0.35)]",
+          "before:shadow-[inset_0_0_0_1px_rgba(245,158,11,0.25),inset_0_0_16px_0_rgba(99,102,241,0.18),inset_0_-3px_12px_0_rgba(245,158,11,0.18),0_1px_3px_0_rgba(0,0,0,0.5),0_8px_30px_0_rgba(99,102,241,0.35)]",
           "before:transition-transform before:duration-300 active:before:scale-[0.975]",
           className,
         )}
@@ -64,7 +64,7 @@ const HoverButton = React.forwardRef<HTMLButtonElement, HoverButtonProps>(
         onPointerEnter={() => setIsListening(true)}
         onPointerLeave={() => setIsListening(false)}
         {...props}
-        style={{ ["--circle-start" as string]: "#f5b53f", ["--circle-end" as string]: "#e11d2a" }}
+        style={{ ["--circle-start" as string]: "#f59e0b", ["--circle-end" as string]: "#6366f1" }}
       >
         {circles.map(({ id, x, y, color, fadeState }) => (
           <div

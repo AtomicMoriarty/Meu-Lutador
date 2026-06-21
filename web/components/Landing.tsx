@@ -65,21 +65,21 @@ const STEPS = [
     icon: Flame,
     n: "02",
     title: "Enfrente a escadinha",
-    body: "8 lutas, dificuldade crescente. Simulação narrada round a round com knockdowns, quedas, finalizações. Cada detalhe importa.",
+    body: "8 lutas, dificuldade crescente. Simulação narrada round a round com knockdowns, quedas e finalizações. Cada detalhe importa.",
     accent: "blood" as const,
   },
   {
     icon: Trophy,
     n: "03",
     title: "Conquiste o cinturão",
-    body: "Main event de 5 rounds, juízes 10–9. Perdeu uma? Acabou. Invicto 8–0? O cinturão é seu e a lenda começa.",
+    body: "Main event de 5 rounds, juízes no sistema 10 a 9. Perdeu uma? Acabou. Invicto? O cinturão é seu.",
     accent: "gold" as const,
   },
 ];
 
 const DIFFS = [
   { icon: Swords, value: 8, suffix: "", label: "Lutas", sub: "Escadinha até o título" },
-  { icon: Gavel, value: 3, suffix: "", label: "Juízes", sub: "Sistema 10–9 real" },
+  { icon: Gavel, value: 3, suffix: "", label: "Juízes", sub: "Sistema 10 a 9 real" },
   { icon: MessageSquareText, value: 5, suffix: "", label: "Rounds", sub: "No main event" },
   { icon: Dna, value: 11, suffix: "+", label: "Atributos", sub: "Herdados de feras" },
 ];
@@ -90,20 +90,8 @@ export function Landing({ onStart }: { onStart: () => void }) {
   return (
     <main className="relative w-full overflow-x-hidden">
       {/* ============ HERO — GAME TITLE SCREEN ============ */}
-      <section className="scan-lines relative flex min-h-[100svh] flex-col items-center justify-center px-4 text-center">
+      <section className="relative flex min-h-[100svh] flex-col items-center justify-center px-4 text-center">
         <OctagonHero />
-
-        {/* Spotlight sweep */}
-        {!reduce && (
-          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-            <div
-              className="spotlight-sweep absolute -left-1/4 top-0 h-full w-1/2 opacity-40"
-              style={{
-                background: "linear-gradient(90deg, transparent, rgba(225,29,42,0.08), transparent)",
-              }}
-            />
-          </div>
-        )}
 
         {/* Top bar */}
         <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-4 sm:px-6">
@@ -211,7 +199,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
                 <div
                   className="pointer-events-none absolute inset-x-0 top-0 h-px"
                   style={{
-                    background: `linear-gradient(90deg, transparent, ${s.accent === "gold" ? "rgba(245,181,63,0.5)" : "rgba(225,29,42,0.5)"}, transparent)`,
+                    background: `linear-gradient(90deg, transparent, ${s.accent === "gold" ? "rgba(245,158,11,0.5)" : "rgba(99,102,241,0.5)"}, transparent)`,
                   }}
                   aria-hidden
                 />
@@ -309,7 +297,7 @@ export function Landing({ onStart }: { onStart: () => void }) {
             {/* Glow */}
             <div
               className="pointer-events-none absolute inset-0 opacity-70"
-              style={{ background: "radial-gradient(60% 80% at 50% 0%, rgba(245,181,63,0.12), transparent 70%)" }}
+              style={{ background: "radial-gradient(60% 80% at 50% 0%, rgba(245,158,11,0.12), transparent 70%)" }}
               aria-hidden
             />
             <div className="relative px-6 pb-8 pt-10 sm:px-12 sm:pt-14">

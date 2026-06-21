@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  /* ---- Surfaces (ink) — deeper for cinematic feel ---- */
-  --color-ink: #07070a;
-  --color-ink-2: #0e0e13;
-  --color-ink-3: #151519;
-  --color-ink-4: #1c1c23;
-  --color-line: #23232e;
-  --color-line-2: #30303d;
+  /* ---- Surfaces ---- */
+  --color-ink: #09090b;
+  --color-ink-2: #121215;
+  --color-ink-3: #1c1c20;
+  --color-ink-4: #26262b;
+  --color-line: #26262b;
+  --color-line-2: #35353c;
 
   /* ---- Brand ---- */
-  --color-blood: #e11d2a;
-  --color-blood-2: #ff3344;
-  --color-blood-3: #a30f18;
-  --color-gold: #f5b53f;
-  --color-gold-2: #ffd778;
-  --color-gold-3: #c8922e;
-  --color-mist: #b0b5c0;
-  --color-mist-2: #d0d4dc;
+  --color-blood: #6366f1;
+  --color-blood-2: #818cf8;
+  --color-blood-3: #4338ca;
+  --color-gold: #f59e0b;
+  --color-gold-2: #fbbf24;
+  --color-gold-3: #b45309;
+  --color-mist: #9ca3af;
+  --color-mist-2: #d1d5db;
 
   /* ---- Glass ---- */
-  --color-smoke: rgba(255, 255, 255, 0.04);
-  --color-smoke-2: rgba(255, 255, 255, 0.07);
+  --color-smoke: rgba(255, 255, 255, 0.03);
+  --color-smoke-2: rgba(255, 255, 255, 0.05);
 
   --font-display: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
@@ -37,7 +37,7 @@
 
 html, body {
   background: var(--color-ink);
-  color: #f0f0f4;
+  color: #e4e4e7;
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -46,37 +46,34 @@ html, body {
 
 body {
   background-image:
-    radial-gradient(1400px 700px at 50% -5%, rgba(225, 29, 42, 0.13), transparent 60%),
-    radial-gradient(1000px 600px at 100% 110%, rgba(245, 181, 63, 0.06), transparent 60%);
+    radial-gradient(ellipse 1200px 600px at 50% -5%, rgba(99, 102, 241, 0.06), transparent 60%);
   background-attachment: fixed;
 }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-line-2); }
 
-/* ---- Global focus-visible: gold ring ---- */
 :focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--color-blood-2);
   outline-offset: 2px;
 }
 
 /* =========================================================
-   Type scale — cinematic sport broadcast
+   Type scale
    ========================================================= */
 .eyebrow {
   font-size: 0.6875rem;
   line-height: 1;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.2em;
   color: var(--color-mist);
 }
 .display {
   font-weight: 900;
   letter-spacing: -0.03em;
-  line-height: 0.90;
-  text-transform: uppercase;
+  line-height: 0.92;
 }
 .tabular { font-variant-numeric: tabular-nums; }
 .lead {
@@ -86,38 +83,33 @@ body {
 }
 
 /* =========================================================
-   Surfaces & accents — glass-forward
+   Surfaces
    ========================================================= */
-.text-glow { text-shadow: 0 0 28px rgba(225, 29, 42, 0.5), 0 0 80px rgba(225, 29, 42, 0.15); }
-.gold-glow { text-shadow: 0 0 24px rgba(245, 181, 63, 0.45), 0 0 60px rgba(245, 181, 63, 0.12); }
+.text-glow { text-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+.gold-glow { text-shadow: 0 0 18px rgba(245, 158, 11, 0.3); }
 
 .card {
-  background: linear-gradient(180deg, rgba(14, 14, 19, 0.85), rgba(7, 7, 10, 0.9));
+  background: rgba(18, 18, 21, 0.8);
   border: 1px solid var(--color-line);
   border-radius: 1rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 .card-hairline {
   position: relative;
-  background: linear-gradient(180deg, rgba(14, 14, 19, 0.85), rgba(7, 7, 10, 0.9));
+  background: rgba(18, 18, 21, 0.8);
   border: 1px solid var(--color-line);
   border-radius: 1rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 .card-hairline::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(245, 181, 63, 0.55), transparent);
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.35), transparent);
   border-radius: inherit;
 }
 
-/* gold foil text */
 .foil {
-  background: linear-gradient(100deg, #b07d20 0%, var(--color-gold) 30%, var(--color-gold-2) 50%, var(--color-gold) 70%, #b07d20 100%);
+  background: linear-gradient(100deg, #92610d 0%, var(--color-gold) 30%, var(--color-gold-2) 50%, var(--color-gold) 70%, #92610d 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -128,7 +120,6 @@ body {
   to { background-position: 200% center; }
 }
 
-/* gaming accent line */
 .accent-top {
   position: relative;
 }
@@ -141,7 +132,7 @@ body {
 }
 
 /* =========================================================
-   Skeleton shimmer for loading states
+   Skeleton shimmer
    ========================================================= */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
@@ -158,9 +149,9 @@ body {
    Fight keyframes
    ========================================================= */
 @keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.5); }
-  70% { box-shadow: 0 0 0 14px rgba(225, 29, 42, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.35); }
+  70% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
 }
 .pulse-ring { animation: pulse-ring 1.8s infinite; }
 
@@ -185,37 +176,36 @@ body {
 .animate-fourth { animation: moveHorizontal 40s ease infinite; }
 .animate-fifth { animation: moveInCircle 20s ease infinite; }
 
-/* ---- fight-finish impact ---- */
 @keyframes impact-flash {
   0% { opacity: 0; }
-  12% { opacity: 0.85; }
+  12% { opacity: 0.7; }
   100% { opacity: 0; }
 }
-.impact-flash { animation: impact-flash 0.5s ease-out forwards; }
+.impact-flash { animation: impact-flash 0.45s ease-out forwards; }
 
 @keyframes shake {
   0%, 100% { transform: translate(0, 0); }
-  20% { transform: translate(-6px, 3px); }
-  40% { transform: translate(6px, -3px); }
-  60% { transform: translate(-4px, -2px); }
-  80% { transform: translate(4px, 2px); }
+  20% { transform: translate(-5px, 2px); }
+  40% { transform: translate(5px, -2px); }
+  60% { transform: translate(-3px, -1px); }
+  80% { transform: translate(3px, 1px); }
 }
-.shake { animation: shake 0.45s ease-in-out; }
+.shake { animation: shake 0.4s ease-in-out; }
 
 @keyframes punch-in {
-  0% { transform: scale(0.4); opacity: 0; filter: blur(6px); }
-  60% { transform: scale(1.08); opacity: 1; filter: blur(0); }
+  0% { transform: scale(0.5); opacity: 0; filter: blur(4px); }
+  60% { transform: scale(1.05); opacity: 1; filter: blur(0); }
   100% { transform: scale(1); }
 }
-.punch-in { animation: punch-in 0.5s var(--ease-pop) both; }
+.punch-in { animation: punch-in 0.45s var(--ease-pop) both; }
 
 /* =========================================================
-   Landing keyframes — cinematic arena
+   Landing keyframes
    ========================================================= */
 
 @keyframes octagon-breathe {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
-  50% { transform: scale(1.04) rotate(0.5deg); opacity: 0.8; }
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.4; }
+  50% { transform: scale(1.03) rotate(0.3deg); opacity: 0.6; }
 }
 .octagon-breathe { animation: octagon-breathe 9s ease-in-out infinite; transform-origin: center; }
 
@@ -232,7 +222,6 @@ body {
 .marquee-track.reverse { animation-direction: reverse; }
 .marquee:hover .marquee-track { animation-play-state: paused; }
 
-/* CTA sheen sweep */
 @keyframes sheen {
   0% { transform: translateX(-120%) skewX(-18deg); }
   60%, 100% { transform: translateX(220%) skewX(-18deg); }
@@ -244,20 +233,20 @@ body {
   bottom: 0;
   width: 38%;
   left: 0;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.18), transparent);
   animation: sheen 4.2s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes float-y {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  50% { transform: translateY(-5px); }
 }
 .float-y { animation: float-y 5s ease-in-out infinite; }
 
 @keyframes badge-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.55); }
-  50% { opacity: 0.85; box-shadow: 0 0 14px 2px rgba(225, 29, 42, 0.35); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.3); }
+  50% { opacity: 0.9; box-shadow: 0 0 8px 1px rgba(99, 102, 241, 0.15); }
 }
 .badge-pulse { animation: badge-pulse 2.2s ease-in-out infinite; }
 
@@ -268,56 +257,28 @@ body {
 .live-dot { animation: live-blink 1.4s ease-in-out infinite; }
 
 @keyframes scroll-bob {
-  0%, 100% { transform: translateY(0); opacity: 0.6; }
-  50% { transform: translateY(5px); opacity: 1; }
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(4px); opacity: 0.8; }
 }
 .scroll-bob { animation: scroll-bob 1.8s ease-in-out infinite; }
 
-/* ---- gaming-specific: spotlight sweep behind hero ---- */
-@keyframes spotlight-sweep {
-  0% { transform: translateX(-40%) rotate(-8deg); opacity: 0.3; }
-  50% { transform: translateX(40%) rotate(8deg); opacity: 0.6; }
-  100% { transform: translateX(-40%) rotate(-8deg); opacity: 0.3; }
-}
-.spotlight-sweep { animation: spotlight-sweep 12s ease-in-out infinite; }
-
-/* ---- gaming: subtle scan line overlay ---- */
-@keyframes scan-line {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
-}
-.scan-lines::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(255, 255, 255, 0.008) 2px,
-    rgba(255, 255, 255, 0.008) 4px
-  );
-  pointer-events: none;
-}
-
-/* ---- gaming: glow pulse for interactive elements ---- */
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px -4px rgba(225, 29, 42, 0.3); }
-  50% { box-shadow: 0 0 32px -2px rgba(225, 29, 42, 0.5); }
+  0%, 100% { box-shadow: 0 0 14px -4px rgba(99, 102, 241, 0.15); }
+  50% { box-shadow: 0 0 20px -2px rgba(99, 102, 241, 0.25); }
 }
 .glow-pulse { animation: glow-pulse 2.5s ease-in-out infinite; }
 
 /* ---- career ladder step glow ---- */
 @keyframes step-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 181, 63, 0.4); }
-  50% { box-shadow: 0 0 12px 2px rgba(245, 181, 63, 0.25); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25); }
+  50% { box-shadow: 0 0 8px 1px rgba(245, 158, 11, 0.12); }
 }
 .step-glow { animation: step-glow 2s ease-in-out infinite; }
 
 /* ---- gold radial burst for champion ---- */
 @keyframes gold-burst {
   0% { transform: scale(0.5); opacity: 0; }
-  50% { opacity: 0.15; }
+  50% { opacity: 0.12; }
   100% { transform: scale(2.5); opacity: 0; }
 }
 .gold-burst::after {
@@ -325,20 +286,20 @@ body {
   position: absolute;
   inset: -50%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(245, 181, 63, 0.4), transparent 60%);
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.3), transparent 60%);
   animation: gold-burst 2s ease-out forwards;
   pointer-events: none;
 }
 
 /* =========================================================
-   Reduced motion — kill all decorative animation
+   Reduced motion
    ========================================================= */
 @media (prefers-reduced-motion: reduce) {
   .animate-first, .animate-second, .animate-third, .animate-fourth, .animate-fifth,
   .impact-flash, .shake, .punch-in, .pulse-ring,
   .octagon-breathe, .octagon-spin-slow, .marquee-track, .sheen-on-idle::after,
   .float-y, .badge-pulse, .live-dot, .scroll-bob, .foil,
-  .spotlight-sweep, .scan-lines::after, .glow-pulse, .skeleton,
+  .glow-pulse, .skeleton,
   .step-glow, .gold-burst::after {
     animation: none !important;
   }

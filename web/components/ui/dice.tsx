@@ -16,7 +16,7 @@ export function Dice({ rolling, disabled, onRoll }: { rolling: boolean; disabled
       disabled={rolling || disabled}
       whileTap={{ scale: 0.92 }}
       aria-label="Sortear 10 lutadores"
-      className="group relative grid size-20 place-items-center rounded-2xl border border-gold/40 bg-gradient-to-b from-ink-3 to-ink shadow-[0_10px_40px_-12px_rgba(245,181,63,0.5)] disabled:opacity-40"
+      className="group relative grid size-20 place-items-center rounded-2xl border border-gold/40 bg-gradient-to-b from-ink-3 to-ink shadow-[0_10px_40px_-12px_rgba(245,158,11,0.5)] disabled:opacity-40"
     >
       <span className="sheen-on-idle pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden />
       <motion.span

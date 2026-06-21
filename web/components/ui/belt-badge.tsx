@@ -10,17 +10,17 @@ export function BeltBadge({ className, size = 84 }: { className?: string; size?:
       <svg viewBox="0 0 100 100" width={size} height={size} className="relative" aria-hidden>
         <defs>
           <linearGradient id="belt-foil" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#b07d20" />
-            <stop offset="35%" stopColor="#f5b53f" />
-            <stop offset="55%" stopColor="#ffd778" />
-            <stop offset="100%" stopColor="#b07d20" />
+            <stop offset="0%" stopColor="#92400e" />
+            <stop offset="35%" stopColor="#f59e0b" />
+            <stop offset="55%" stopColor="#fbbf24" />
+            <stop offset="100%" stopColor="#92400e" />
           </linearGradient>
         </defs>
         {/* outer plate */}
         <polygon
           points="50,6 80,20 94,50 80,80 50,94 20,80 6,50 20,20"
           fill="url(#belt-foil)"
-          stroke="#7a560f"
+          stroke="#78350f"
           strokeWidth="1.5"
         />
         {/* inner ring */}
@@ -40,7 +40,7 @@ export function BeltBadge({ className, size = 84 }: { className?: string; size?:
           fontWeight="900"
           fill="#0a0a0c"
         >
-          8–0
+          8:0
         </text>
       </svg>
     </div>

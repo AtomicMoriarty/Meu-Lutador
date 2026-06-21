@@ -242,7 +242,7 @@ export default function Page() {
                       <p className="eyebrow mb-3">Estilo</p>
                       <div className="grid grid-cols-3 gap-2.5">
                         {Object.entries(STANCES).map(([k, vv]) => (
-                          <button key={k} onClick={() => setStance(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", stance === k ? "border-blood bg-blood/10 shadow-[0_0_20px_-4px_rgba(225,29,42,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
+                          <button key={k} onClick={() => setStance(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", stance === k ? "border-blood bg-blood/10 shadow-[0_0_20px_-4px_rgba(99,102,241,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
                             <div className="flex justify-center" aria-hidden><vv.icon className={cx("size-6 transition-colors", stance === k ? "text-blood-2" : "text-mist-2")} strokeWidth={1.8} /></div>
                             <div className="mt-1.5 text-xs font-bold">{vv.label}</div>
                           </button>
@@ -254,7 +254,7 @@ export default function Page() {
                       <p className="eyebrow mb-3">Arte principal</p>
                       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
                         {Object.entries(DISCIPLINES).map(([k, vv]) => (
-                          <button key={k} onClick={() => setDiscipline(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", discipline === k ? "border-gold bg-gold/10 shadow-[0_0_20px_-4px_rgba(245,181,63,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
+                          <button key={k} onClick={() => setDiscipline(k)} className={cx("rounded-xl border p-3.5 text-center transition-all", discipline === k ? "border-gold bg-gold/10 shadow-[0_0_20px_-4px_rgba(245,158,11,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
                             <div className="flex justify-center" aria-hidden><vv.icon className={cx("size-6 transition-colors", discipline === k ? "text-gold" : "text-mist-2")} strokeWidth={1.8} /></div>
                             <div className="mt-1.5 text-[11px] font-bold leading-tight">{vv.label}</div>
                           </button>
@@ -273,8 +273,8 @@ export default function Page() {
                         for (const a of [...ups]) if (downs.has(a)) { ups.delete(a); downs.delete(a); }
                         return (
                           <div className="flex flex-col gap-2">
-                            <p className="text-emerald-400">▲ Melhora: {[...ups].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
-                            <p className="text-blood-2">▼ Piora: {[...downs].map((a) => LABEL_BY_ATTR[a]).join(", ") || "—"}</p>
+                            <p className="text-emerald-400">▲ Melhora: {[...ups].map((a) => LABEL_BY_ATTR[a]).join(", ") || "nenhum"}</p>
+                            <p className="text-blood-2">▼ Piora: {[...downs].map((a) => LABEL_BY_ATTR[a]).join(", ") || "nenhum"}</p>
                           </div>
                         );
                       })()}
@@ -336,7 +336,7 @@ export default function Page() {
                               transition={{ delay: Math.min(i * 0.05, 0.45), ease: [0.22, 1, 0.36, 1] }}
                               whileTap={{ scale: 0.96 }}
                               onClick={() => setSelected(f)}
-                              className="flex items-center gap-2.5 rounded-xl border border-line bg-smoke p-3 text-left transition-all hover:border-gold/40 hover:bg-smoke-2 hover:shadow-[0_0_16px_-4px_rgba(245,181,63,0.2)]"
+                              className="flex items-center gap-2.5 rounded-xl border border-line bg-smoke p-3 text-left transition-all hover:border-gold/40 hover:bg-smoke-2 hover:shadow-[0_0_16px_-4px_rgba(245,158,11,0.2)]"
                             >
                               <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-ink-3">
                                 <span className="text-sm font-black tabular text-gold">{f.overall || "?"}</span>
@@ -363,7 +363,7 @@ export default function Page() {
                             transition={{ delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
                             onClick={() => chosen && setBuild((b) => { const n = { ...b }; delete n[s.attribute_name]; return n; })}
                             aria-label={chosen ? `${s.label}: ${chosen.name}. Tocar para limpar.` : `${s.label}: vazio`}
-                            className={cx("flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all", chosen ? "border-blood/40 bg-blood/[0.06] shadow-[0_0_16px_-6px_rgba(225,29,42,0.2)]" : "border-dashed border-line bg-transparent")}
+                            className={cx("flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all", chosen ? "border-blood/40 bg-blood/[0.06] shadow-[0_0_16px_-6px_rgba(99,102,241,0.2)]" : "border-dashed border-line bg-transparent")}
                           >
                             <div className={cx("grid size-10 shrink-0 place-items-center rounded-lg", chosen ? "bg-blood/15" : "bg-ink-3")}>
                               <SlotIcon name={s.icon} className={cx("size-5", chosen ? "text-blood-2" : "text-mist-2")} />
@@ -389,7 +389,7 @@ export default function Page() {
                       <p className="eyebrow mb-3">Velocidade</p>
                       <div className="grid grid-cols-3 gap-2.5">
                         {(["normal", "rapida", "ultra"] as Speed[]).map((s) => (
-                          <button key={s} onClick={() => setSpeed(s)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", speed === s ? "border-blood bg-blood/10 shadow-[0_0_20px_-4px_rgba(225,29,42,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
+                          <button key={s} onClick={() => setSpeed(s)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", speed === s ? "border-blood bg-blood/10 shadow-[0_0_20px_-4px_rgba(99,102,241,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>
                             {s === "normal" ? "Normal" : s === "rapida" ? "Rápida" : "Ultra"}
                           </button>
                         ))}
@@ -399,8 +399,8 @@ export default function Page() {
                     <div className="card p-5">
                       <p className="eyebrow mb-3">Modo</p>
                       <div className="grid grid-cols-2 gap-2.5">
-                        <button onClick={() => setAuto(false)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", !auto ? "border-gold bg-gold/10 text-gold shadow-[0_0_20px_-4px_rgba(245,181,63,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>Luta a luta</button>
-                        <button onClick={() => setAuto(true)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", auto ? "border-gold bg-gold/10 text-gold shadow-[0_0_20px_-4px_rgba(245,181,63,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>Automático</button>
+                        <button onClick={() => setAuto(false)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", !auto ? "border-gold bg-gold/10 text-gold shadow-[0_0_20px_-4px_rgba(245,158,11,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>Luta a luta</button>
+                        <button onClick={() => setAuto(true)} className={cx("rounded-xl border p-3.5 text-center text-sm font-bold transition-all", auto ? "border-gold bg-gold/10 text-gold shadow-[0_0_20px_-4px_rgba(245,158,11,0.3)]" : "border-line bg-smoke hover:bg-smoke-2")}>Automático</button>
                       </div>
                       <p className="mt-2.5 text-xs text-mist">{auto ? "As 8 lutas rodam sozinhas, uma após a outra." : "Você clica para avançar a cada luta."}</p>
                     </div>
@@ -412,7 +412,7 @@ export default function Page() {
                 {stage === "loading" && (
                   <motion.section key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={stageTransition}>
                     <div className="card grid place-items-center gap-5 p-12">
-                      <div className="pulse-ring grid size-20 place-items-center rounded-full bg-blood/80 shadow-[0_0_40px_-8px_rgba(225,29,42,0.6)]"><Swords className="size-9 text-white" strokeWidth={1.8} /></div>
+                      <div className="pulse-ring grid size-20 place-items-center rounded-full bg-blood/80 shadow-[0_0_40px_-8px_rgba(99,102,241,0.6)]"><Swords className="size-9 text-white" strokeWidth={1.8} /></div>
                       <Spinner label="Montando o card…" />
                       <p className="text-xs text-mist/60">Buscando adversários dignos</p>
                     </div>
@@ -440,7 +440,7 @@ export default function Page() {
                       </div>
                       <div className="mt-2.5 flex items-center justify-between text-xs">
                         <span className={cx("font-bold", idx >= 6 ? "text-gold" : "text-blood-2")}>{fightLabel(idx)} · {roundsFor(idx)}R</span>
-                        <span className="tabular text-mist">{record.w}W–{record.l}L</span>
+                        <span className="tabular text-mist">{record.w}V · {record.l}D</span>
                       </div>
                     </div>
                     <FightPlayback result={result} aName={player.name} bName={oppName} playerWon={playerWon} ctaLabel={ctaLabel} onContinue={afterFight} speed={speed} onSpeed={setSpeed} auto={auto} onAuto={setAuto} />
@@ -455,7 +455,7 @@ export default function Page() {
                       <p className="mt-2 text-sm text-mist">
                         Perdeu para <strong className="text-white">{oppName}</strong> na {fightLabel(idx)}.
                       </p>
-                      <p className="mt-1 text-lg font-black tabular text-white">{record.w}W–{record.l}L</p>
+                      <p className="mt-1 text-lg font-black tabular text-white">{record.w}V · {record.l}D</p>
                     </div>
 
                     {record.w > 0 && (
@@ -480,7 +480,7 @@ export default function Page() {
                     <div className="gold-burst relative bg-gradient-to-b from-gold/25 to-transparent px-6 py-10">
                       <BeltBadge className="mx-auto mb-4" size={96} />
                       <h2 className="punch-in display gold-glow text-4xl">CAMPEÃO!</h2>
-                      <p className="mt-1 text-2xl font-black tabular text-gold">8–0</p>
+                      <p className="mt-1 text-2xl font-black tabular text-gold">8V · 0D</p>
                       <p className="mt-2 text-sm text-white/70"><strong className="text-white">{name}</strong> conquistou o cinturão invicto.</p>
                     </div>
 

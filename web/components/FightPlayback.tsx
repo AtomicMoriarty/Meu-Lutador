@@ -169,7 +169,7 @@ export function FightPlayback({
                   {result.judges.map((j, i) => (
                     <div key={i} className="rounded-lg bg-white/5 py-2">
                       <p className="text-[10px] text-mist">Juiz {i + 1}</p>
-                      <p className="font-mono font-bold">{j.a}–{j.b}</p>
+                      <p className="font-mono font-bold">{j.a} x {j.b}</p>
                     </div>
                   ))}
                 </div>
