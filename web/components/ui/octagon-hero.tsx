@@ -1,22 +1,16 @@
 "use client";
 
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
-function octagon(cx: number, cy: number, r: number) {
-  const pts: string[] = [];
-  for (let i = 0; i < 8; i++) {
-    const a = (Math.PI / 8) + (i * Math.PI) / 4;
-    pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
-  }
-  return pts.join(" ");
-}
-
+/**
+ * Hero backdrop: the pixel-art octagon (top-down) as the centerpiece, with
+ * cinematic spotlight wash + dark fades so the title/CTA stay legible on top.
+ * The image lives at /public/octagon-hero.png. If it's missing it simply
+ * hides itself (no broken-image icon) and the spotlight wash carries the hero.
+ */
 export function OctagonHero({ className }: { className?: string }) {
-  const rings = [90, 72, 54, 36, 18];
-  const spokes = Array.from({ length: 8 }, (_, i) => {
-    const a = (Math.PI / 8) + (i * Math.PI) / 4;
-    return { x: 100 + 90 * Math.cos(a), y: 100 + 90 * Math.sin(a) };
-  });
+  const [hasArt, setHasArt] = React.useState(true);
 
   return (
     <div className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)} aria-hidden>
@@ -25,58 +19,34 @@ export function OctagonHero({ className }: { className?: string }) {
         className="absolute inset-0"
         style={{
           background: [
-            "radial-gradient(70% 55% at 50% 25%, rgba(99,102,241,0.14), transparent 70%)",
-            "radial-gradient(50% 40% at 50% 30%, rgba(245,158,11,0.06), transparent 65%)",
-            "radial-gradient(30% 30% at 30% 60%, rgba(99,102,241,0.05), transparent 60%)",
-            "radial-gradient(30% 30% at 70% 60%, rgba(245,158,11,0.03), transparent 60%)",
+            "radial-gradient(70% 55% at 50% 32%, rgba(99,102,241,0.16), transparent 70%)",
+            "radial-gradient(50% 40% at 50% 36%, rgba(245,158,11,0.06), transparent 65%)",
+            "radial-gradient(30% 30% at 28% 62%, rgba(99,102,241,0.05), transparent 60%)",
+            "radial-gradient(30% 30% at 72% 62%, rgba(245,158,11,0.03), transparent 60%)",
           ].join(", "),
         }}
       />
-      <div className="absolute left-1/2 top-1/2 aspect-square w-[150%] max-w-[800px] -translate-x-1/2 -translate-y-1/2 sm:w-[115%]">
-        <svg viewBox="0 0 200 200" className="octagon-breathe h-full w-full">
-          <defs>
-            <radialGradient id="oct-fade" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.0" />
-              <stop offset="50%" stopColor="#6366f1" stopOpacity="0.0" />
-              <stop offset="100%" stopColor="#07070a" stopOpacity="0.95" />
-            </radialGradient>
-          </defs>
 
-          <g className="octagon-spin-slow" style={{ transformOrigin: "100px 100px" }}>
-            {rings.map((r, i) => (
-              <polygon
-                key={r}
-                points={octagon(100, 100, r)}
-                fill="none"
-                stroke={
-                  i === 0
-                    ? "rgba(245,158,11,0.3)"
-                    : i === 1
-                      ? "rgba(99,102,241,0.2)"
-                      : `rgba(154,160,173,${0.12 - i * 0.02})`
-                }
-                strokeWidth={i === 0 ? 0.8 : 0.4}
-              />
-            ))}
-            {spokes.map((s, i) => (
-              <line
-                key={i}
-                x1="100"
-                y1="100"
-                x2={s.x}
-                y2={s.y}
-                stroke="rgba(154,160,173,0.08)"
-                strokeWidth="0.3"
-              />
-            ))}
-          </g>
+      {/* Pixel-art octagon centerpiece */}
+      {hasArt && (
+        <div className="absolute left-1/2 top-[44%] aspect-square w-[min(108vw,640px)] -translate-x-1/2 -translate-y-1/2">
+          {/* glow halo behind the art */}
+          <div
+            className="absolute inset-[8%] rounded-[28%] blur-2xl"
+            style={{ background: "radial-gradient(circle at 50% 45%, rgba(99,102,241,0.28), transparent 65%)" }}
+          />
+          <img
+            src="/octagon-hero.png"
+            alt=""
+            onError={() => setHasArt(false)}
+            className="octagon-breathe relative h-full w-full select-none object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.85)]"
+            style={{ imageRendering: "pixelated" }}
+          />
+        </div>
+      )}
 
-          <rect x="0" y="0" width="200" height="200" fill="url(#oct-fade)" />
-        </svg>
-      </div>
-
-      {/* Bottom + top fades */}
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-ink to-transparent" />
+      {/* Bottom + top fades — keep title/CTA readable */}
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-ink via-ink/70 to-transparent" />
       <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-ink/60 to-transparent" />
     </div>
   );
