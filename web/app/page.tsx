@@ -1,7 +1,7 @@
 "use client";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useState } from "react";
-import { randomFullFighters } from "@/lib/api";
+import { randomFullFighters, randomCard } from "@/lib/api";
 import { ATTRIBUTE_SLOTS, type Build, type FullFighter } from "@/lib/types";
 import {
   makeFighter,
@@ -75,8 +75,8 @@ const DISC_KEYS = Object.keys(DISCIPLINES);
 const pickKey = (a: string[]) => a[Math.floor(Math.random() * a.length)]!;
 
 function opponentFighter(o: FullFighter, index: number): FighterInput {
-  const scale = 1.05 + index * 0.06;
-  const floor = 40 + index * 3;
+  const scale = 1.0 + index * 0.045; // 1.0 (luta 1) .. 1.32 (main) — duro mas justo
+  const floor = 32 + index * 2; // 32 .. 46
   const oStance = pickKey(STANCE_KEYS);
   const oDisc = pickKey(DISC_KEYS);
   const entries = ATTRIBUTE_SLOTS.map((s) => {
@@ -101,6 +101,7 @@ export default function Page() {
   const [discipline, setDiscipline] = useState<string>("boxe");
   const [build, setBuild] = useState<Build>({});
   const [batch, setBatch] = useState<FullFighter[]>([]);
+  const [cardMeta, setCardMeta] = useState<{ event_name: string; ufc_number: number | null; event_date: string | null } | null>(null);
   const [rolling, setRolling] = useState(false);
   const [rerolls, setRerolls] = useState(3);
   const [selected, setSelected] = useState<FullFighter | null>(null);
@@ -118,8 +119,9 @@ export default function Page() {
   async function fetchBatch() {
     setRolling(true);
     try {
-      const r = await randomFullFighters(10);
-      setBatch(r);
+      const c = await randomCard();
+      setBatch(c.fighters);
+      setCardMeta({ event_name: c.event_name, ufc_number: c.ufc_number, event_date: c.event_date });
     } catch (e) {
       setError(String((e as Error).message));
     } finally {
@@ -139,6 +141,7 @@ export default function Page() {
   function newRun() {
     setBuild({});
     setBatch([]);
+    setCardMeta(null);
     setRerolls(3);
     setRecord({ w: 0, l: 0 });
     setIdx(0);
@@ -298,10 +301,18 @@ export default function Page() {
                     {/* Dado + sorteio */}
                     <div className="card flex flex-col items-center gap-4 p-5">
                       <Dice rolling={rolling} disabled={batch.length > 0} onRoll={rollMain} />
-                      <p className="text-center text-xs leading-relaxed text-mist">
-                        Role o dado, toque num lutador e escolha <strong className="text-white">o atributo</strong> dele.
-                        Re-sorteios: <strong className="text-gold">{rerolls}</strong>
-                      </p>
+                      {cardMeta && batch.length > 0 ? (
+                        <div className="text-center">
+                          <p className="eyebrow text-gold/80">Caiu o card</p>
+                          <p className="font-extrabold text-white">{cardMeta.event_name}</p>
+                          <p className="text-[11px] text-mist">{cardMeta.event_date ?? ""} · escolha 1 lutador e o atributo dele</p>
+                        </div>
+                      ) : (
+                        <p className="text-center text-xs leading-relaxed text-mist">
+                          Role o dado pra sortear um <strong className="text-white">card</strong> e escolher um lutador dele.
+                          Re-sorteios: <strong className="text-gold">{rerolls}</strong>
+                        </p>
+                      )}
                       {batch.length > 0 && (
                         <button
                           onClick={reroll}
@@ -324,7 +335,7 @@ export default function Page() {
                             <div className="grid size-16 place-items-center rounded-2xl border border-dashed border-line-2">
                               <Dices className="size-8 text-mist/30" strokeWidth={1.5} />
                             </div>
-                            <p className="text-center text-sm text-mist">Role o dado para sortear 10 lutadores</p>
+                            <p className="text-center text-sm text-mist">Role o dado para sortear um card</p>
                           </div>
                         ) : (
                           batch.map((f, i) => (
@@ -338,7 +349,7 @@ export default function Page() {
                               className="flex items-center gap-2.5 rounded-xl border border-line bg-smoke p-3 text-left transition-all hover:border-gold/40 hover:bg-smoke-2 hover:shadow-[0_0_16px_-4px_rgba(245,158,11,0.2)]"
                             >
                               <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-ink-3">
-                                <span className="text-sm font-black tabular text-gold">{f.overall || "?"}</span>
+                                <Swords className="size-4 text-mist-2" strokeWidth={1.8} aria-hidden />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <span className="block truncate text-xs font-bold">{f.name}</span>

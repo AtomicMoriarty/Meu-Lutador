@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { Swords, X } from "lucide-react";
 import { ATTRIBUTE_SLOTS, type Build, type FullFighter } from "@/lib/types";
 import { SlotIcon } from "./ui/slot-icon";
 import { cx } from "./ui";
@@ -39,7 +39,7 @@ export function FighterAssignSheet({
             <div className="flex items-center justify-between border-b border-line p-5">
               <div className="flex items-center gap-3.5 min-w-0">
                 <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink-3 ring-1 ring-line">
-                  <span className="text-lg font-black tabular text-gold">{fighter.overall || "?"}</span>
+                  <Swords className="size-5 text-mist-2" strokeWidth={1.8} aria-hidden />
                 </div>
                 <div className="min-w-0">
                   <p className="eyebrow text-blood-2">Encaixar em qual atributo?</p>

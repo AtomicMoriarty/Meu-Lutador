@@ -20,8 +20,16 @@ export type FullFighter = {
   fighter_id: string;
   name: string;
   nickname: string | null;
-  overall: number;
+  overall?: number;
   attrs: Record<string, number>;
+};
+
+/** A drawn real UFC event with its top fighters to pick from. */
+export type Card = {
+  event_name: string;
+  ufc_number: number | null;
+  event_date: string | null;
+  fighters: FullFighter[];
 };
 
 /** What a filled slot stores: which fighter it was inherited from + the value. */

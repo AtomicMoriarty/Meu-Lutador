@@ -1,4 +1,4 @@
-import type { FullFighter } from "./types";
+import type { Card, FullFighter } from "./types";
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://nozthsissdwkfwtogmdu.supabase.co";
@@ -50,4 +50,11 @@ async function rpc<T>(fn: string, args: Record<string, unknown>, attempt = 0): P
 /** Draw N random fighters with full attribute maps (weighted toward known/recent). */
 export function randomFullFighters(n = 10): Promise<FullFighter[]> {
   return rpc<FullFighter[]>("random_full_fighters", { p_n: n });
+}
+
+/** Draw a random real UFC card (event) with its top fighters to pick from. */
+export async function randomCard(): Promise<Card> {
+  const rows = await rpc<Card[]>("random_card", {});
+  if (!rows || rows.length === 0) throw new Error("nenhum card encontrado");
+  return rows[0]!;
 }

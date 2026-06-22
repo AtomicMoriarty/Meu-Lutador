@@ -159,9 +159,10 @@ export function simulate(fa: FighterInput, fb: FighterInput, opts: SimOptions = 
     let hurtState: State | null = null; // who is hurt right now
     events.push({ round, clock: "0:00", type: "round_start", detail: `Round ${round}` });
 
-    // luck/misfortune roulette — a subtle per-round swing for each fighter (±6%)
-    const luckA = 1 + (rng() * 2 - 1) * 0.06;
-    const luckB = 1 + (rng() * 2 - 1) * 0.06;
+    // luck/misfortune roulette — biased by CARISMA (never decisive): high carisma
+    // shifts the mean up but can still draw bad luck; low carisma the opposite.
+    const luckA = 1 + ((v(A, "carisma") - 50) / 50) * 0.04 + (rng() * 2 - 1) * 0.06;
+    const luckB = 1 + ((v(B, "carisma") - 50) / 50) * 0.04 + (rng() * 2 - 1) * 0.06;
     const luckOf = (s: State) => (s === A ? luckA : luckB);
     const swing = Math.abs(luckA - 1) >= Math.abs(luckB - 1) ? { s: A, l: luckA } : { s: B, l: luckB };
     if (Math.abs(swing.l - 1) > 0.035) {
