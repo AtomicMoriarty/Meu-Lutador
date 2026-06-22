@@ -5,12 +5,25 @@ export const metadata: Metadata = {
   title: "Meu Lutador | Octógono dos Sonhos",
   description:
     "Monte um lutador de MMA herdando cada atributo de lendas reais do UFC e encare uma escadinha de 8 lutas, narrada round a round, até o cinturão.",
+  // Tab/browser icon — reuses the same pixel-art octagon dropped at /public/octagon-hero.png.
+  icons: {
+    icon: "/octagon-hero.png",
+    shortcut: "/octagon-hero.png",
+    apple: "/octagon-hero.png",
+  },
   openGraph: {
     title: "Meu Lutador | Octógono dos Sonhos",
     description:
       "Herde das feras, vença as 8 lutas e conquiste o cinturão. Carreira de MMA simulada e narrada, grátis no navegador.",
     locale: "pt_BR",
     type: "website",
+    images: [{ url: "/octagon-hero.png", width: 1200, height: 1200, alt: "Octógono dos Sonhos" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Meu Lutador | Octógono dos Sonhos",
+    description: "Herde das feras, vença as 8 lutas e conquiste o cinturão.",
+    images: ["/octagon-hero.png"],
   },
 };
 
